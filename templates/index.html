@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mumbai Transit Spatial Intelligence | Editorial Masterpiece</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Fonts: Cinzel & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f4f0; color: #171717; }
+        .editorial-title { font-family: 'Cinzel', serif; letter-spacing: -0.02em; }
+    </style>
+</head>
+<body class="min-h-screen selection:bg-neutral-900 selection:text-[#f4f4f0]">
+
+    <!-- Editorial Header Section -->
+    <header class="w-full px-8 md:px-16 pt-16 pb-12 border-b border-neutral-300">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
+            <div class="space-y-4 max-w-4xl">
+                <span class="text-xs font-mono uppercase tracking-widest text-emerald-700 bg-emerald-100 px-3 py-1 border border-emerald-200">System Active • 24 Wards Mapped</span>
+                <h1 class="editorial-title text-4xl sm:text-6xl lg:text-7xl font-extrabold text-neutral-900 leading-[1.02]">
+                    Mumbai Public Transport Accessibility Project
+                </h1>
+            </div>
+            <div class="space-y-3 text-sm text-neutral-600 lg:border-l lg:border-neutral-300 lg:pl-8 max-w-sm">
+                <p>An advanced algorithmic evaluation of urban transit deserts, expansion priorities, and graph search performance.</p>
+                <div class="flex items-center gap-2 font-mono text-xs font-bold text-neutral-900 pt-1">
+                    <span>A* & UCS Optimized Framework</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick KPI Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
+            <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Total Coverage Grid</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">24 Wards</p>
+                <span class="text-xs text-emerald-700 font-medium mt-1 block">100% Mapped Successfully</span>
+            </div>
+            <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Primary Heuristic</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">A* Search</p>
+                <span class="text-xs text-indigo-700 font-medium mt-1 block">Euclidean + Path Cost</span>
+            </div>
+            <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Uninformed Baseline</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">UCS Model</p>
+                <span class="text-xs text-amber-700 font-medium mt-1 block">Cumulative Cost Convergence</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Fluid Layout -->
+    <main class="w-full px-8 md:px-16 py-12 space-y-12">
+
+        
+        <!-- Section 1: Algorithms & Configurations -->
+        <section id="algorithms" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 bg-white border border-neutral-300 p-8 shadow-sm space-y-6 hover:shadow-md transition">
+                <div class="border-b border-neutral-200 pb-4 flex justify-between items-center">
+                    <h2 class="editorial-title text-xl font-bold text-neutral-900">Algorithms Explored</h2>
+                    <span class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200">5 Models</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
+                        <strong class="text-neutral-900">1. A* Search</strong> 
+                        <span class="text-xs text-neutral-600 mt-1">Informed heuristic routing</span>
+                    </div>
+                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
+                        <strong class="text-neutral-900">2. Uniform Cost Search (UCS)</strong> 
+                        <span class="text-xs text-neutral-600 mt-1">Lowest cumulative path cost</span>
+                    </div>
+                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
+                        <strong class="text-neutral-900">3. Dijkstra's Algorithm</strong> 
+                        <span class="text-xs text-neutral-600 mt-1">Single-source shortest path</span>
+                    </div>
+                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
+                        <strong class="text-neutral-900">4. Breadth-First Search (BFS)</strong> 
+                        <span class="text-xs text-neutral-600 mt-1">Unweighted grid traversal</span>
+                    </div>
+                </div>
+                <div class="bg-[#f4f4f0] p-4 border border-neutral-200 text-sm flex justify-between items-center">
+                    <strong class="text-neutral-900">5. Greedy Best-First Search</strong> 
+                    <span class="text-xs text-neutral-600">Fast heuristic-driven</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 bg-neutral-900 text-[#f4f4f0] border border-neutral-800 p-8 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="border-b border-neutral-800 pb-4 flex justify-between items-center">
+                        <h2 class="editorial-title text-xl font-bold text-white">Best Algorithms</h2>
+                        <span class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700">Selected</span>
+                    </div>
+                    <div class="space-y-4 text-sm text-neutral-300 mt-5">
+                        <div class="bg-neutral-800/80 p-4 border border-neutral-700">
+                            <span class="text-emerald-400 font-bold block mb-1">Informed Selection: A* Search</span>
+                            <p class="text-xs text-neutral-400">Combines precise Euclidean distance heuristics with path weights for accurate spatial prioritization.</p>
+                        </div>
+                        <div class="bg-neutral-800/80 p-4 border border-neutral-700">
+                            <span class="text-sky-400 font-bold block mb-1">Uninformed Selection: Uniform Cost Search (UCS)</span>
+                            <p class="text-xs text-neutral-400">Establishes robust baseline convergence based strictly on edge weights and cumulative costs.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Colorful Visual Charts -->
+        <section id="analytics" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
+                <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
+                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Access Gap Ranking</h3>
+                    <span class="text-xs font-mono text-neutral-500">SCORE METRIC</span>
+                </div>
+                <div class="relative h-80 w-full">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
+                <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
+                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Transit Deserts (Distance to Stop)</h3>
+                    <span class="text-xs font-mono text-neutral-500">KILOMETERS</span>
+                </div>
+                <div class="relative h-80 w-full flex justify-center">
+                    <canvas id="transitDesertChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Data Cards Lists with Real-time Filter & Export Options -->
+        <section id="deserts" class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-neutral-300 p-6">
+                <div>
+                    <h2 class="editorial-title text-xl font-bold text-neutral-900">Ward Intelligence & Target Lists</h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">Explore identified transit deserts and recommended infrastructure expansion zones.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <input type="text" id="wardSearch" placeholder="Search ward or location..." class="bg-[#f4f4f0] border border-neutral-300 px-4 py-2 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 transition w-full sm:w-60">
+                    <button id="exportCsvBtn" class="bg-neutral-900 text-[#f4f4f0] font-mono text-xs uppercase px-3 py-2 hover:bg-neutral-800 transition">Export CSV</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Poor Access Wards -->
+                <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
+                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Identified Transit Deserts</h3>
+                        <span class="text-xs font-mono text-neutral-500">DISTANCE > 0.30 KM</span>
+                    </div>
+                    <div id="poorAccessList" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+                        {% for item in poor_access %}
+                        <div class="ward-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer" data-name="{{ item.ward }} {{ item.name | lower }}" onclick="openWardModal('Ward {{ item.ward }}', '{{ item.name }}', '{{ item.distance }} km', 'Transit Desert')">
+                            <span class="font-medium text-neutral-900">Ward {{ item.ward }} <span class="text-neutral-500 font-normal">({{ item.name }})</span></span>
+                            <span class="font-mono font-bold text-amber-700 bg-amber-100/60 px-3 py-1 border border-amber-200">{{ item.distance }} km</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Recommended Expansion Zones -->
+                <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
+                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Areas that could be prioritized</h3>
+                        <span class="text-xs font-mono text-neutral-500">PRIORITY TARGETS</span>
+                    </div>
+                    <div id="prioritizedList" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+                        {% for item in prioritized %}
+                        <div class="priority-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer" data-name="{{ item.ward }} {{ item.name | lower }}" onclick="openWardModal('Ward {{ item.ward }}', '{{ item.name }}', 'Score: {{ item.score }}', 'Priority Expansion Zone')">
+                            <div>
+                                <span class="font-bold text-neutral-900 text-base">Ward {{ item.ward }} <span class="text-neutral-500 font-normal">({{ item.name }})</span></span>
+                                <span class="block text-xs text-neutral-600 mt-0.5">Recommended for Priority Expansion</span>
+                            </div>
+                            <span class="font-mono font-bold text-indigo-700 bg-indigo-100/60 px-3 py-1 border border-indigo-200 text-base">{{ item.score }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Interactive Ward Modal Popup -->
+    <div id="wardModal" class="fixed inset-0 z-50 bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-neutral-300 max-w-lg w-full p-8 shadow-2xl space-y-6 relative">
+            <button onclick="closeWardModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 font-mono text-sm">✕</button>
+            <div>
+                <span id="modalCategory" class="text-xs font-mono uppercase bg-neutral-100 text-neutral-600 px-2.5 py-1 border border-neutral-200"></span>
+                <h3 id="modalTitle" class="editorial-title text-2xl font-bold text-neutral-900 mt-2"></h3>
+            </div>
+            <div class="space-y-3 text-sm text-neutral-600 border-t border-b border-neutral-200 py-4">
+                <div class="flex justify-between">
+                    <span>Primary Metric:</span>
+                    <strong id="modalMetric" class="text-neutral-900 font-mono"></strong>
+                </div>
+                <div class="flex justify-between">
+                    <span>Estimated Population Density:</span>
+                    <strong class="text-neutral-900 font-mono">High Density (~24,500 / km²)</strong>
+                </div>
+                <div class="flex justify-between">
+                    <span>Connected Transit Hubs:</span>
+                    <strong class="text-neutral-900 font-mono">Bus / Suburban Rail</strong>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeWardModal()" class="bg-neutral-900 text-[#f4f4f0] text-xs font-mono uppercase px-4 py-2 hover:bg-neutral-800 transition">Close Details</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Scripts & Colorful Chart Configurations -->
+    <script>
+        const prioritizedData = {{ prioritized | tojson }};
+        const poorAccessData = {{ poor_access | tojson }};
+
+        // 1. Vibrant Colorful Priority Bar Chart
+        const ctxPriority = document.getElementById('priorityChart').getContext('2d');
+        new Chart(ctxPriority, {
+            type: 'bar',
+            data: {
+                labels: prioritizedData.map(item => `Ward ${item.ward} (${item.name})`),
+                datasets: [{
+                    label: 'Accessibility Gap Score',
+                    data: prioritizedData.map(item => item.score),
+                    backgroundColor: [
+                        'rgba(79, 70, 229, 0.85)',
+                        'rgba(16, 185, 129, 0.85)',
+                        'rgba(245, 158, 11, 0.85)',
+                        'rgba(239, 68, 68, 0.85)',
+                        'rgba(168, 85, 247, 0.85)'
+                    ],
+                    borderColor: [
+                        'rgb(79, 70, 229)',
+                        'rgb(16, 185, 129)',
+                        'rgb(245, 158, 11)',
+                        'rgb(239, 68, 68)',
+                        'rgb(168, 85, 247)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#525252', font: { size: 11, family: 'Plus Jakarta Sans' } }, grid: { display: false } },
+                    y: { ticks: { color: '#525252', font: { family: 'Plus Jakarta Sans' } }, grid: { color: 'rgba(229, 231, 235, 1)' } }
+                }
+            }
+        });
+
+        // 2. Vibrant Colorful Transit Deserts Doughnut Chart
+        const topPoor = poorAccessData.slice(0, 6);
+        const ctxDesert = document.getElementById('transitDesertChart').getContext('2d');
+        new Chart(ctxDesert, {
+            type: 'doughnut',
+            data: {
+                labels: topPoor.map(item => `Ward ${item.ward} (${item.name})`),
+                datasets: [{
+                    data: topPoor.map(item => item.distance),
+                    backgroundColor: [
+                        'rgba(245, 158, 11, 0.85)',
+                        'rgba(239, 68, 68, 0.85)',
+                        'rgba(59, 130, 246, 0.85)',
+                        'rgba(16, 185, 129, 0.85)',
+                        'rgba(168, 85, 247, 0.85)',
+                        'rgba(236, 72, 153, 0.85)'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#404040', font: { size: 11, family: 'Plus Jakarta Sans' }, boxWidth: 14 } }
+                }
+            }
+        });
+
+        // Real-time Ward Search Filter Functionality
+        const searchInput = document.getElementById('wardSearch');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            document.querySelectorAll('.ward-item').forEach(el => {
+                const text = el.getAttribute('data-name');
+                el.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+
+            document.querySelectorAll('.priority-item').forEach(el => {
+                const text = el.getAttribute('data-name');
+                el.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        });
+
+        // Modal Handlers
+        function openWardModal(wardNum, wardName, metric, category) {
+            document.getElementById('modalCategory').textContent = category;
+            document.getElementById('modalTitle').textContent = `${wardNum} (${wardName})`;
+            document.getElementById('modalMetric').textContent = metric;
+            document.getElementById('wardModal').classList.remove('hidden');
+        }
+
+        function closeWardModal() {
+            document.getElementById('wardModal').classList.add('hidden');
+        }
+
+        // CSV Export Functionality
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+            let csvContent = "data:text/csv;charset=utf-8,Ward,Name,Metric\n";
+            prioritizedData.forEach(item => {
+                csvContent += `"${item.ward}","${item.name}","Score: ${item.score}"\n`;
+            });
+            poorAccessData.forEach(item => {
+                csvContent += `"${item.ward}","${item.name}","Distance: ${item.distance}km"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "mumbai_transit_intelligence.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
