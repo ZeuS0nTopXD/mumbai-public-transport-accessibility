@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background Circle with matching dark theme -->
+  <circle cx="32" cy="32" r="30" fill="#0f172a" stroke="#38bdf8" stroke-width="4"/>
+  
+  <!-- Train Front Profile Icon -->
+  <rect x="18" y="14" width="28" height="30" rx="6" fill="#f8fafc"/>
+  <!-- Windows -->
+  <rect x="22" y="18" width="20" height="10" rx="2" fill="#0f172a"/>
+  <!-- Headlights -->
+  <circle cx="24" cy="36" r="3" fill="#38bdf8"/>
+  <circle cx="40" cy="36" r="3" fill="#38bdf8"/>
+  <!-- Tracks / Base -->
+  <rect x="14" y="48" width="36" height="4" rx="2" fill="#94a3b8"/>
+</svg>
