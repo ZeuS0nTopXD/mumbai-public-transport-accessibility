@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mumbai Transit Accessibility Analytics</title>
+    <!-- Bootstrap 5 & Google Fonts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-main: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #0f172a;
+            --shadow-hard: 4px 4px 0px #0f172a;
+            --shadow-hover: 6px 6px 0px #0f172a;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Premium Monochromatic Hero Header */
+        .hero-section { 
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            color: var(--text-main); 
+            padding: 80px 0 60px 0; 
+            border-bottom: 3px solid var(--border-color);
+            margin-bottom: 50px; 
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 6px;
+            background: repeating-linear-gradient(45deg, #0f172a, #0f172a 15px, #ffffff 15px, #ffffff 30px);
+        }
+
+        /* Sharp Minimalist Cards */
+        .card { 
+            border: 2.5px solid var(--border-color); 
+            border-radius: 1.25rem; 
+            background: var(--surface-color); 
+            box-shadow: var(--shadow-hard); 
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Stat Cards Accents */
+        .stat-card { 
+            border-left: 8px solid var(--border-color); 
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, rgba(15,23,42,0.04) 0%, rgba(255,255,255,0) 70%);
+            border-bottom-left-radius: 100%;
+        }
+
+        /* Tables & Typography */
+        .table-custom {
+            margin-bottom: 0;
+        }
+        .table-custom th { 
+            background-color: #0f172a; 
+            font-weight: 700; 
+            color: #ffffff; 
+            border-top: none; 
+            font-size: 0.78rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.08em; 
+            padding: 1rem 0.75rem;
+        }
+        .table-custom th:first-child { border-top-left-radius: 0.5rem; }
+        .table-custom th:last-child { border-top-right-radius: 0.5rem; }
+        
+        .table-custom td { 
+            padding: 1.1rem 0.75rem; 
+            vertical-align: middle; 
+            color: var(--text-main); 
+            border-color: #f1f5f9; 
+            font-weight: 500;
+        }
+        
+        .badge-positive { 
+            background-color: #ecfdf5; 
+            color: #047857; 
+            font-weight: 700; 
+            border: 1.5px solid #10b981; 
+        }
+        .badge-negative { 
+            background-color: #fef2f2; 
+            color: #b91c1c; 
+            font-weight: 700; 
+            border: 1.5px solid #ef4444; 
+        }
+
+        /* Charts Container */
+        .chart-container { 
+            text-align: center; 
+            background: var(--surface-color); 
+            padding: 30px; 
+            border-radius: 1.25rem; 
+            border: 2.5px solid var(--border-color); 
+            box-shadow: var(--shadow-hard); 
+            transition: all 0.25s ease-in-out;
+        }
+        .chart-container:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: var(--shadow-hover);
+        }
+        .chart-container img { 
+            max-width: 100%; 
+            height: auto; 
+            border-radius: 0.75rem; 
+        }
+
+        /* Sources Card */
+        .source-card { 
+            background: var(--surface-color); 
+            border: 2.5px solid var(--border-color); 
+            box-shadow: var(--shadow-hard); 
+        }
+        .source-link { 
+            text-decoration: none; 
+            font-weight: 700; 
+            font-size: 0.85rem; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 6px; 
+            color: #0f172a; 
+            background: #f1f5f9;
+            padding: 6px 14px;
+            border-radius: 2rem;
+            border: 1.5px solid #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .source-link:hover { 
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        /* Miscellaneous utilities */
+        .section-header-badge {
+            background: #0f172a;
+            color: #fff;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            padding: 0.35rem 0.8rem;
+            border-radius: 2rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Header -->
+    <div class="hero-section">
+        <div class="container position-relative">
+            <h1 class="display-5 mb-2 tracking-tight" style="font-weight: 800; letter-spacing: -0.03em;">Mumbai Public Transport Accessibility Project</h1>
+            <p class="text-secondary mb-0 lead fs-6 fw-medium">Ward-Level Infrastructure Intelligence & Machine Learning Model Benchmarks</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Container -->
+    <div class="container mb-5">
+        
+        <!-- Official Dataset Sources Section -->
+        <div class="mb-5">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width: 8px; height: 24px; background: #0f172a; border-radius: 4px;"></div>
+                    <h5 class="fw-bold text-dark mb-0">Official Dataset Sources</h5>
+                </div>
+                <span class="section-header-badge">Verified Repositories</span>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card p-4 source-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Source 01</span>
+                                <h6 class="fw-bold text-dark mb-0 fs-5">Ward-Level Demographic Dataset</h6>
+                            </div>
+                            <span class="badge bg-dark text-white px-2.5 py-1">GitHub</span>
+                        </div>
+                        <p class="text-secondary small mb-4">Population counts, working population stats, household stats, and land area distribution across Mumbai wards.</p>
+                        <div class="mt-auto">
+                            <a href="https://github.com/mickeykedia/Mumbai-Population-Map/blob/master/ward_level_collated.csv" target="_blank" class="source-link">
+                                <span>View GitHub Repository</span> &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4 source-card h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Source 02</span>
+                                <h6 class="fw-bold text-dark mb-0 fs-5">Mumbai Local Train Dataset</h6>
+                            </div>
+                            <span class="badge bg-secondary text-white px-2.5 py-1">Kaggle</span>
+                        </div>
+                        <p class="text-secondary small mb-4">Railway station details, platforms, tracks, line classifications, and commuter volumes.</p>
+                        <div class="mt-auto">
+                            <a href="https://www.kaggle.com/datasets/prasad22/mumbai-local-train-dataset" target="_blank" class="source-link">
+                                <span>View Kaggle Dataset</span> &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Stats Row (4 Columns) -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card p-4 stat-card" style="border-left-color: #0f172a;">
+                    <span class="text-secondary text-uppercase fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">Wards Analyzed</span>
+                    <h3 class="fw-extrabold text-dark mb-0" style="font-weight: 800;">{{ total_wards }} <span class="fs-6 fw-normal text-muted">Wards</span></h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 stat-card" style="border-left-color: #10b981;">
+                    <span class="text-secondary text-uppercase fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">Railway Stations</span>
+                    <h3 class="fw-extrabold text-dark mb-0" style="font-weight: 800;">{{ total_stations }} <span class="fs-6 fw-normal text-muted">Stations</span></h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 stat-card" style="border-left-color: #f59e0b;">
+                    <span class="text-secondary text-uppercase fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">Total Population</span>
+                    <h3 class="fw-extrabold text-dark mb-0" style="font-weight: 800; font-size: 1.6rem;">{{ "{:,}".format(total_pop) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 stat-card" style="border-left-color: #0ea5e9;">
+                    <span class="text-secondary text-uppercase fw-bold d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">Working Population</span>
+                    <h3 class="fw-extrabold text-dark mb-0" style="font-weight: 800; font-size: 1.6rem;">{{ "{:,}".format(total_working_pop) }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 1: Model Table & Algorithm Performance Chart -->
+        <div class="row g-4 mb-5">
+            <div class="col-lg-6">
+                <div class="card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-dark">Model Evaluation Matrix</h5>
+                        <span class="badge bg-dark text-white px-3 py-1.5 rounded-pill small">Supervised ML</span>
+                    </div>
+                    <p class="text-secondary small mb-4">Benchmarking regression algorithms across demographic density and station accessibility features.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>RMSE</th>
+                                    <th>R² Score</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in metrics %}
+                                <tr>
+                                    <td class="fw-bold text-dark">{{ m.name }}</td>
+                                    <td class="text-secondary font-monospace small">{{ m.rmse }}</td>
+                                    <td><strong class="text-dark font-monospace">{{ m.r2 }}</strong></td>
+                                    <td>
+                                        {% if m.r2 >= 0 %}
+                                            <span class="badge badge-positive px-3 py-1.5 rounded-pill">Optimal Fit</span>
+                                        {% else %}
+                                            <span class="badge badge-negative px-3 py-1.5 rounded-pill">Overfitted</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="chart-container h-100 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center w-100 mb-3">
+                        <h5 class="fw-bold mb-0 text-dark text-start">Algorithm Performance Benchmark</h5>
+                        <span class="badge bg-light text-dark border px-2.5 py-1 small">R² Comparison</span>
+                    </div>
+                    <div class="my-auto py-2">
+                        <img src="data:image/png;base64,{{ chart }}" alt="Algorithm Performance Chart" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Station Distribution Chart & Dataset Explorer Table -->
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="chart-container h-100 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center w-100 mb-3">
+                        <h5 class="fw-bold mb-0 text-dark text-start">Railway Line Distribution</h5>
+                        <span class="badge bg-light text-dark border px-2.5 py-1 small">Network Analysis</span>
+                    </div>
+                    <div class="my-auto py-2">
+                        <img src="data:image/png;base64,{{ chart2 }}" alt="Station Distribution Chart" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-dark">Ward-Level Dataset Preview</h5>
+                        <span class="badge bg-light text-dark border px-3 py-1.5 rounded-pill small">Sample Records</span>
+                    </div>
+                    <p class="text-secondary small mb-4">Sample records collated from demographic and geographic datasets.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle small">
+                            <thead>
+                                <tr>
+                                    <th>Ward</th>
+                                    <th>Population</th>
+                                    <th>Area (sq km)</th>
+                                    <th>Density</th>
+                                    <th>Stations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in sample_wards %}
+                                <tr>
+                                    <td class="fw-bold text-dark">Ward {{ row.Ward_Alphabet }}</td>
+                                    <td class="font-monospace">{{ "{:,}".format(row.TOT_P) }}</td>
+                                    <td class="font-monospace text-secondary">{{ row.Land_Area }}</td>
+                                    <td class="font-monospace">{{ "{:,.0f}".format(row.TOT_P_DEN) }}</td>
+                                    <td><span class="badge bg-light text-dark border px-2.5 py-1 font-monospace">{{ row.Station_Count }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-secondary small border-top bg-white" style="border-color: #cbd5e1 !important;">
+        <p class="mb-0 fw-medium">Mumbai Public Transport Accessibility Project</p>
+    </footer>
+
+</body>
+</html>
