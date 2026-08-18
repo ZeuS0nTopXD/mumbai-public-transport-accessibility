@@ -1,291 +1,75 @@
-import base64
-import io
-import matplotlib
-import numpy as np
-import pandas as pd
 from flask import Flask, render_template
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.tree import DecisionTreeRegressor
-
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from scipy.spatial import cKDTree
+import os
 
 app = Flask(__name__)
 
-
-def generate_performance_chart(results_df):
-    plt.figure(figsize=(9, 4.2), dpi=200)
-    models = results_df.index.tolist()
-    r2_scores = results_df['R2 Score'].tolist()
-
-    colors = ['#2563eb' if v >= 0 else '#ef4444' for v in r2_scores]
-    bars = plt.bar(
-        models,
-        r2_scores,
-        color=colors,
-        width=0.45,
-        edgecolor='#1e293b',
-        linewidth=0.7,
-        alpha=0.9,
-    )
-
-    plt.axhline(0, color='#1e293b', linewidth=1, linestyle='--')
-    plt.title(
-        'Algorithm Performance Benchmark ($R^2$ Score)',
-        fontsize=13,
-        fontweight='bold',
-        pad=15,
-        color='#0f172a',
-    )
-    plt.ylabel(
-        '$R^2$ Score', fontsize=11, fontweight='600', color='#334155'
-    )
-    plt.ylim(-0.5, 1.1)
-    plt.grid(axis='y', linestyle=':', alpha=0.5)
-    plt.xticks(fontsize=10, fontweight='500', color='#334155')
-    plt.yticks(fontsize=10, color='#334155')
-
-    for bar in bars:
-        height = bar.get_height()
-        va = 'bottom' if height >= 0 else 'top'
-        plt.annotate(
-            f'{height:.2f}',
-            xy=(bar.get_x() + bar.get_width() / 2, height),
-            xytext=(0, 4 if height >= 0 else -14),
-            textcoords='offset points',
-            ha='center',
-            va=va,
-            fontsize=9,
-            fontweight='bold',
-            color='#1e293b',
-        )
-
-    plt.tight_layout()
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png', transparent=True)
-    buffer.seek(0)
-    plot_url = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    plt.close()
-    return plot_url
-
-
-def generate_modal_split_chart(total_train, total_metro, total_monorail, total_bus):
-    plt.figure(figsize=(9, 4.2), dpi=200)
-    modes = ['Local Train', 'Metro', 'Monorail', 'Bus Stops']
-    counts = [total_train, total_metro, total_monorail, total_bus]
-    colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
-
-    bars = plt.bar(
-        modes,
-        counts,
-        color=colors,
-        width=0.45,
-        edgecolor='#1e293b',
-        linewidth=0.7,
-        alpha=0.9,
-    )
-
-    plt.title(
-        'Transit Infrastructure Distribution by Mode',
-        fontsize=13,
-        fontweight='bold',
-        pad=15,
-        color='#0f172a',
-    )
-    plt.ylabel(
-        'Count / Stops', fontsize=11, fontweight='600', color='#334155'
-    )
-    plt.grid(axis='y', linestyle=':', alpha=0.5)
-    plt.xticks(fontsize=10, fontweight='500', color='#334155')
-    plt.yticks(fontsize=10, color='#334155')
-
-    for bar in bars:
-        height = bar.get_height()
-        plt.annotate(
-            f'{height:,}',
-            xy=(bar.get_x() + bar.get_width() / 2, height),
-            xytext=(0, 4),
-            textcoords='offset points',
-            ha='center',
-            va='bottom',
-            fontsize=9,
-            fontweight='bold',
-            color='#1e293b',
-        )
-
-    plt.tight_layout()
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png', transparent=True)
-    buffer.seek(0)
-    chart2_url = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    plt.close()
-    return chart2_url
-
-
-def run_model_pipeline():
-    # 1. Load All Datasets
-    df_ward = pd.read_csv('ward_level_collated.csv')
-    df_train = pd.read_csv('Mumbai Local Train Dataset.csv', encoding='latin1')
+def process_transit_data():
+    # Load datasets (adjusting path to look inside the data folder)
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    wards_path = os.path.join(base_path, 'data', 'ward_level_collated.csv')
+    transit_path = os.path.join(base_path, 'data', 'unified_mumbai_transport.csv')
     
-    try:
-        df_metro = pd.read_csv('Mumbai Metro Stations Dataset.csv', encoding='latin1')
-    except Exception:
-        df_metro = pd.DataFrame()
+    df_wards = pd.read_csv(wards_path)
+    df_transit = pd.read_csv(transit_path)
 
-    try:
-        df_monorail = pd.read_csv('Mumbai Monorail Stations Dataset.csv', encoding='latin1')
-    except Exception:
-        df_monorail = pd.DataFrame()
+    df_transit = df_transit.rename(columns={'Latitude': 'latitude', 'Longitude': 'longitude'})
+    df_transit = df_transit.dropna(subset=['latitude', 'longitude'])
+    df_wards = df_wards.dropna(subset=['Ward_Alphabet'])
 
-    try:
-        df_bus = pd.read_csv('BEST Bus Stops.csv', encoding='latin1')
-    except Exception:
-        df_bus = pd.DataFrame()
-
-    total_pop = int(df_ward['TOT_P'].sum()) if 'TOT_P' in df_ward.columns else 0
-    total_working_pop = int(df_ward['TOT_WORK_P'].sum()) if 'TOT_WORK_P' in df_ward.columns else 0
-    total_train = len(df_train)
-    total_metro = len(df_metro) if not df_metro.empty else 0
-    total_monorail = len(df_monorail) if not df_monorail.empty else 0
-    total_bus = len(df_bus) if not df_bus.empty else 0
-
-    df_ward.columns = df_ward.columns.str.strip()
-
-    station_to_ward = {
-        'Churchgate': 'A', 'Marine Lines': 'A', 'Charni Road': 'D', 'Grant Road': 'D',
-        'Mumbai Central': 'E', 'Mahalakshmi': 'G/S', 'Lower Parel': 'G/S', 'Prabhadevi': 'G/S',
-        'Dadar': 'G/N', 'Matunga Road': 'G/N', 'Mahim Jn': 'G/N', 'Bandra': 'H/W',
-        'Khar Road': 'H/W', 'Santacruz': 'H/W', 'Vile Parle': 'K/W', 'Andheri': 'K/W',
-        'Jogeshwari': 'K/W', 'Ram Mandir': 'K/W', 'Goregaon': 'P/N', 'Malad': 'P/N',
-        'Kandivli': 'R/S', 'Borivali': 'R/S', 'Dahisar': 'R/N', 'Mira Road': 'R/N',
-        'CSMT': 'A', 'Masjid': 'B', 'Sandhurst Road': 'B', 'Byculla': 'E',
-        'Chinchpokli': 'E', 'Currey Road': 'G/S', 'Parel': 'G/S', 'Matunga': 'F/N',
-        'Sion': 'F/N', 'Kurla': 'L', 'Vidhyavihar': 'N', 'Ghatkopar': 'N',
-        'Vikhroli': 'N', 'Kanjurmarg': 'S', 'Bhandup': 'S', 'Nahur': 'S',
-        'Mulund': 'T', 'Reay Road': 'E', 'Cotton Green': 'E', 'Sewri': 'E',
-        'Wadala Road': 'F/N', 'GTB Nagar': 'F/N', 'Chunabhatti': 'L', 'Chembur': 'M/W',
-        'Govandi': 'M/W', 'Mankhurd': 'M/W'
+    mumbai_ward_coords = {
+        'A': (18.9220, 72.8347), 'B': (18.9548, 72.8377), 'C': (18.9449, 72.8259),
+        'D': (18.9647, 72.8130), 'E': (18.9696, 72.8423), 'F/N': (19.0238, 72.8550),
+        'F/S': (19.0014, 72.8452), 'G/N': (19.0330, 72.8475), 'G/S': (19.0103, 72.8262),
+        'H/E': (19.0700, 72.8468), 'H/W': (19.0657, 72.8310), 'K/E': (19.1136, 72.8697),
+        'K/W': (19.1197, 72.8464), 'L': (19.0759, 72.8877), 'M/E': (19.0473, 72.9158),
+        'M/W': (19.0596, 72.8958), 'N': (19.1417, 72.9331), 'P/N': (19.1874, 72.8484),
+        'P/S': (19.1551, 72.8464), 'R/C': (19.2215, 72.8556), 'R/N': (19.2804, 72.8597),
+        'R/S': (19.2094, 72.8126), 'S': (19.1306, 72.9375), 'T': (19.1735, 72.9495)
     }
 
-    df_train['Ward_Alphabet'] = df_train['Station'].map(station_to_ward).fillna('K/E')
+    df_wards['latitude'] = df_wards['Ward_Alphabet'].map(lambda x: mumbai_ward_coords.get(x, (19.0760, 72.8777))[0])
+    df_wards['longitude'] = df_wards['Ward_Alphabet'].map(lambda x: mumbai_ward_coords.get(x, (19.0760, 72.8777))[1])
+
+    # Spatial calculation using cKDTree
+    transit_coords = df_transit[['latitude', 'longitude']].values
+    ward_coords = df_wards[['latitude', 'longitude']].values
+    tree = cKDTree(transit_coords)
+    distances, _ = tree.query(ward_coords)
+    df_wards['distance_km'] = distances * 111
+
+    # Calculations for poor access & priority
+    df_wards['Accessibility_Gap_Score'] = df_wards['distance_km'] * df_wards['TOT_P_DEN']
     
-    station_agg = (
-        df_train.groupby('Ward_Alphabet')
-        .agg(
-            Train_Stations=('Station', 'count'),
-            Avg_Platforms=('Platforms', 'mean'),
-        )
-        .reset_index()
-    )
+    # Poor access dataframe
+    df_poor = df_wards[df_wards['distance_km'] > 0.30].sort_values(by='distance_km', ascending=False)
+    poor_access_list = []
+    for _, row in df_poor.iterrows():
+        poor_access_list.append({
+            'ward': row['Ward_Alphabet'],
+            'name': row['Ward_Names'],
+            'distance': round(row['distance_km'], 2)
+        })
 
-    merged_df = pd.merge(df_ward, station_agg, on='Ward_Alphabet', how='left')
-    merged_df['Train_Stations'] = merged_df['Train_Stations'].fillna(1)
-    merged_df['Avg_Platforms'] = merged_df['Avg_Platforms'].fillna(2.0)
+    # Prioritized dataframe
+    df_prio = df_wards.sort_values(by='Accessibility_Gap_Score', ascending=False).head(5)
+    prioritized_list = []
+    for _, row in df_prio.iterrows():
+        prioritized_list.append({
+            'ward': row['Ward_Alphabet'],
+            'name': row['Ward_Names'],
+            'distance': round(row['distance_km'], 2),
+            'score': round(row['Accessibility_Gap_Score'], 2)
+        })
 
-    if 'MAIN_OT_P' in merged_df.columns and 'Land_Area' in merged_df.columns:
-        merged_df['Commercial_Density'] = merged_df['MAIN_OT_P'] / (merged_df['Land_Area'] + 1e-5)
-    else:
-        merged_df['Commercial_Density'] = 0.5
-
-    # PBL Core Calculation: Public Transport Accessibility Score based on Population vs Station Density
-    if 'TOT_P_DEN' in merged_df.columns and 'TOT_P' in merged_df.columns:
-        merged_df['Accessibility_Score'] = (
-            (merged_df['Train_Stations'] * 15000.0) / (merged_df['TOT_P_DEN'] + 100)
-        )
-    else:
-        merged_df['Accessibility_Score'] = np.random.uniform(5, 50, len(merged_df))
-
-    # Sort wards by accessibility score ascending to highlight underserved areas for priority connectivity
-    underserved_df = merged_df.sort_values(by='Accessibility_Score', ascending=True).head(5)
-
-    feature_cols = [c for c in ['TOT_P', 'TOT_M', 'TOT_F', 'Train_Stations', 'Avg_Platforms', 'Commercial_Density'] if c in merged_df.columns]
-    X = merged_df[feature_cols]
-    y = merged_df['Accessibility_Score']
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
-    models = {
-        'Linear Reg': LinearRegression(),
-        'Ridge Reg': Ridge(alpha=1.0),
-        'Decision Tree': DecisionTreeRegressor(random_state=42),
-        'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42),
-        'Gradient Boost': GradientBoostingRegressor(random_state=42),
-    }
-
-    results = {}
-    model_metrics = []
-    for name, model in models.items():
-        if name in ['Linear Reg', 'Ridge Reg']:
-            model.fit(X_train_scaled, y_train)
-            preds = model.predict(X_test_scaled)
-        else:
-            model.fit(X_train, y_train)
-            preds = model.predict(X_test)
-
-        rmse = round(float(np.sqrt(mean_squared_error(y_test, preds))), 4)
-        r2 = round(float(r2_score(y_test, preds)), 4)
-        results[name] = {'R2 Score': r2}
-        model_metrics.append({'name': name, 'rmse': rmse, 'r2': r2})
-
-    results_df = pd.DataFrame(results).T
-    chart_base64 = generate_performance_chart(results_df)
-    chart2_base64 = generate_modal_split_chart(total_train, total_metro, total_monorail, total_bus)
-
-    priority_wards = underserved_df.to_dict(orient='records')
-
-    return (
-        model_metrics,
-        len(merged_df),
-        total_pop,
-        total_train,
-        total_metro,
-        total_monorail,
-        total_bus,
-        total_working_pop,
-        chart_base64,
-        chart2_base64,
-        priority_wards,
-    )
-
+    return poor_access_list, prioritized_list
 
 @app.route('/')
 def home():
-    (
-        metrics,
-        total_wards,
-        total_pop,
-        total_train,
-        total_metro,
-        total_monorail,
-        total_bus,
-        total_working_pop,
-        chart,
-        chart2,
-        priority_wards,
-    ) = run_model_pipeline()
-    return render_template(
-        'index.html',
-        metrics=metrics,
-        total_wards=total_wards,
-        total_pop=total_pop,
-        total_train=total_train,
-        total_metro=total_metro,
-        total_monorail=total_monorail,
-        total_bus=total_bus,
-        total_working_pop=total_working_pop,
-        chart=chart,
-        chart2=chart2,
-        priority_wards=priority_wards,
-    )
-
+    poor_access, prioritized = process_transit_data()
+    return render_template('index.html', poor_access=poor_access, prioritized=prioritized)
 
 if __name__ == '__main__':
     app.run(debug=True)
