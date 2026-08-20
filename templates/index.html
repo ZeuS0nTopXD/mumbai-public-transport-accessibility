@@ -27,13 +27,6 @@
                     Mumbai Public Transport Accessibility Project
                 </h1>
             </div>
-            <div class="space-y-3 text-sm text-neutral-600 lg:border-l lg:border-neutral-300 lg:pl-8 max-w-sm">
-                <p>An advanced algorithmic evaluation of urban transit deserts, expansion priorities, and graph search performance.</p>
-                <div class="flex items-center gap-2 font-mono text-xs font-bold text-neutral-900 pt-1">
-                    <span>A* & UCS Optimized Framework</span>
-                </div>
-            </div>
-        </div>
 
         <!-- Quick KPI Metric Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
@@ -44,13 +37,13 @@
             </div>
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
                 <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Primary Heuristic</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">A* Search</p>
-                <span class="text-xs text-indigo-700 font-medium mt-1 block">Euclidean + Path Cost</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 0 %}{{ best_two[0] }}{% else %}Pending{% endif %}</p>
+                <span class="text-xs text-indigo-700 font-medium mt-1 block">Best-performing informed/uninformed search</span>
             </div>
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
                 <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Uninformed Baseline</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">UCS Model</p>
-                <span class="text-xs text-amber-700 font-medium mt-1 block">Cumulative Cost Convergence</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 1 %}{{ best_two[1] }}{% else %}Pending{% endif %}</p>
+                <span class="text-xs text-amber-700 font-medium mt-1 block">Second-best overall search performance</span>
             </div>
         </div>
     </header>
@@ -63,48 +56,78 @@
         <section id="algorithms" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-7 bg-white border border-neutral-300 p-8 shadow-sm space-y-6 hover:shadow-md transition">
                 <div class="border-b border-neutral-200 pb-4 flex justify-between items-center">
-                    <h2 class="editorial-title text-xl font-bold text-neutral-900">Algorithms Explored</h2>
+                    <div>
+                        <h2 class="editorial-title text-xl font-bold text-neutral-900">Algorithms Explored</h2>
+                        <p class="text-xs text-neutral-500 mt-1">All five search algorithms are evaluated before the final two are selected.</p>
+                    </div>
                     <span class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200">5 Models</span>
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
-                        <strong class="text-neutral-900">1. A* Search</strong> 
-                        <span class="text-xs text-neutral-600 mt-1">Informed heuristic routing</span>
+                    {% for result in algorithm_results %}
+                    <div class="bg-[#f4f4f0] p-4 border {% if result.algorithm in best_two %}border-neutral-900 ring-1 ring-neutral-900{% else %}border-neutral-200{% endif %} hover:border-neutral-400 transition">
+                        <div class="flex justify-between gap-3 items-start">
+                            <div>
+                                <strong class="text-neutral-900">{{ loop.index }}. {{ result.algorithm }}</strong>
+                                <span class="text-xs text-neutral-600 mt-1 block">
+                                    {% if result.algorithm in ['BFS', 'DFS', 'Uniform Cost Search'] %}
+                                        Uninformed search
+                                    {% else %}
+                                        Informed search
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% if result.algorithm in best_two %}
+                            <span class="text-[10px] font-mono font-bold bg-neutral-900 text-white px-2 py-1">BEST 2</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mt-4 text-[11px]">
+                            <div>
+                                <span class="text-neutral-500 block">Path Cost</span>
+                                <strong>{{ result.path_cost }}</strong>
+                            </div>
+                            <div>
+                                <span class="text-neutral-500 block">Nodes</span>
+                                <strong>{{ result.nodes }}</strong>
+                            </div>
+                            <div>
+                                <span class="text-neutral-500 block">Time</span>
+                                <strong>{{ result.time }}s</strong>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-neutral-200 flex justify-between text-xs">
+                            <span class="text-neutral-500">Overall Score</span>
+                            <strong>{{ result.score }}</strong>
+                        </div>
                     </div>
-                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
-                        <strong class="text-neutral-900">2. Uniform Cost Search (UCS)</strong> 
-                        <span class="text-xs text-neutral-600 mt-1">Lowest cumulative path cost</span>
-                    </div>
-                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
-                        <strong class="text-neutral-900">3. Dijkstra's Algorithm</strong> 
-                        <span class="text-xs text-neutral-600 mt-1">Single-source shortest path</span>
-                    </div>
-                    <div class="bg-[#f4f4f0] p-4 border border-neutral-200 hover:border-neutral-400 transition flex flex-col justify-between">
-                        <strong class="text-neutral-900">4. Breadth-First Search (BFS)</strong> 
-                        <span class="text-xs text-neutral-600 mt-1">Unweighted grid traversal</span>
-                    </div>
-                </div>
-                <div class="bg-[#f4f4f0] p-4 border border-neutral-200 text-sm flex justify-between items-center">
-                    <strong class="text-neutral-900">5. Greedy Best-First Search</strong> 
-                    <span class="text-xs text-neutral-600">Fast heuristic-driven</span>
+                    {% endfor %}
                 </div>
             </div>
 
             <div class="lg:col-span-5 bg-neutral-900 text-[#f4f4f0] border border-neutral-800 p-8 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="border-b border-neutral-800 pb-4 flex justify-between items-center">
-                        <h2 class="editorial-title text-xl font-bold text-white">Best Algorithms</h2>
+                        <div>
+                            <h2 class="editorial-title text-xl font-bold text-white">Best 2 Algorithms</h2>
+                            <p class="text-xs text-neutral-400 mt-1">Selected automatically from the five tested algorithms.</p>
+                        </div>
                         <span class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700">Selected</span>
                     </div>
+
                     <div class="space-y-4 text-sm text-neutral-300 mt-5">
+                        {% for algorithm in best_two %}
                         <div class="bg-neutral-800/80 p-4 border border-neutral-700">
-                            <span class="text-emerald-400 font-bold block mb-1">Informed Selection: A* Search</span>
-                            <p class="text-xs text-neutral-400">Combines precise Euclidean distance heuristics with path weights for accurate spatial prioritization.</p>
+                            <span class="{% if loop.index == 1 %}text-emerald-400{% else %}text-sky-400{% endif %} font-bold block mb-1">#{{ loop.index }} {{ algorithm }}</span>
+                            <p class="text-xs text-neutral-400">Selected using the combined algorithm performance score from path cost, nodes expanded and execution time.</p>
                         </div>
-                        <div class="bg-neutral-800/80 p-4 border border-neutral-700">
-                            <span class="text-sky-400 font-bold block mb-1">Uninformed Selection: Uniform Cost Search (UCS)</span>
-                            <p class="text-xs text-neutral-400">Establishes robust baseline convergence based strictly on edge weights and cumulative costs.</p>
-                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-5 p-4 border border-neutral-700 bg-neutral-950/40">
+                        <p class="text-[11px] uppercase tracking-wider text-neutral-500">Final Analysis</p>
+                        <p class="text-sm text-neutral-300 mt-1">These two algorithms are used for the final public-transport accessibility and priority analysis.</p>
                     </div>
                 </div>
             </div>
