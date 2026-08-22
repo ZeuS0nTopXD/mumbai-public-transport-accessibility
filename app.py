@@ -848,30 +848,37 @@ def process_transit_data():
 
 
 # ============================================================
-# 12. FLASK ROUTE
+# 12. RUN PROCESSING ON STARTUP (CACHED)
+# ============================================================
+
+print("Processing transit data on startup...")
+(
+    cached_poor_access,
+    cached_prioritized,
+    cached_algorithm_results,
+    cached_best_two
+) = process_transit_data()
+print("Data processing complete! Starting web server.")
+
+
+# ============================================================
+# 13. FLASK ROUTE
 # ============================================================
 
 @app.route('/')
 def home():
-
-    (
-        poor_access,
-        prioritized,
-        algorithm_results,
-        best_two
-    ) = process_transit_data()
-
+    # Instantly return the pre-calculated results
     return render_template(
         'index.html',
-        poor_access=poor_access,
-        prioritized=prioritized,
-        algorithm_results=algorithm_results,
-        best_two=best_two
+        poor_access=cached_poor_access,
+        prioritized=cached_prioritized,
+        algorithm_results=cached_algorithm_results,
+        best_two=cached_best_two
     )
 
 
 # ============================================================
-# 13. RUN APPLICATION
+# 14. RUN APPLICATION
 # ============================================================
 
 if __name__ == '__main__':
