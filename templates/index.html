@@ -14,6 +14,87 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f4f0; color: #171717; }
         .editorial-title { font-family: 'Cinzel', serif; letter-spacing: -0.02em; }
+
+        .algo-mini {
+            margin-top: 12px;
+            border-top: 1px solid #d4d4d4;
+            padding-top: 12px;
+        }
+        .algo-mini-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .algo-mini-toggle {
+            border: 1px solid #d4d4d4;
+            background: #fff;
+            color: #171717;
+            padding: 5px 8px;
+            font: 10px monospace;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .algo-mini-toggle:hover { border-color: #171717; }
+        .algo-mini-panel { display: none; }
+        .algo-mini-panel.open { display: block; }
+        .mini-graph {
+            width: 100%;
+            height: 145px;
+            display: block;
+            background: #fafaf8;
+            border: 1px solid #e5e5e5;
+        }
+        .mini-edge {
+            stroke: #a3a3a3;
+            stroke-width: 2.5;
+            fill: none;
+            transition: all .25s ease;
+        }
+        .mini-edge.active { stroke: #059669; stroke-width: 5; }
+        .mini-node circle {
+            fill: #fff;
+            stroke: #737373;
+            stroke-width: 2;
+            transition: all .25s ease;
+        }
+        .mini-node text {
+            fill: #171717;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .mini-node.current circle { fill: #059669; stroke: #065f46; }
+        .mini-node.current text { fill: #fff; }
+        .mini-node.visited circle { fill: #d4d4d4; }
+        .mini-node.goal circle { fill: #991b1b; stroke: #7f1d1d; }
+        .mini-node.goal text { fill: #fff; }
+        .mini-caption {
+            font-size: 11px;
+            line-height: 1.5;
+            color: #525252;
+            margin-top: 7px;
+        }
+        .mini-step {
+            font: 10px monospace;
+            color: #171717;
+            margin-top: 5px;
+        }
+        .mini-next {
+            margin-top: 8px;
+            width: 100%;
+            border: 1px solid #171717;
+            background: #171717;
+            color: #fff;
+            padding: 6px 8px;
+            font: 10px monospace;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .mini-next:hover { background: #404040; }
     </style>
 </head>
 <body class="min-h-screen selection:bg-neutral-900 selection:text-[#f4f4f0]">
@@ -100,6 +181,45 @@
                         <div class="mt-3 pt-3 border-t border-neutral-200 flex justify-between text-xs">
                             <span class="text-neutral-500">Overall Score</span>
                             <strong>{{ result.score }}</strong>
+                        </div>
+
+                        <!-- Compact non-technical explanation inside each algorithm card -->
+                        <div class="algo-mini" data-algo-card="{{ result.algorithm }}">
+                            <div class="algo-mini-head">
+                                <div>
+                                    <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">How it works</span>
+                                    <p class="text-[11px] font-medium text-neutral-900 mt-0.5 algo-mini-short"></p>
+                                </div>
+                                <button type="button" class="algo-mini-toggle">Show</button>
+                            </div>
+
+                            <div class="algo-mini-panel">
+                                <svg class="mini-graph" viewBox="0 0 430 145" aria-label="Visual explanation of {{ result.algorithm }}">
+                                    <g class="mini-edges">
+                                        <line class="mini-edge" data-edge="A-B" x1="42" y1="72" x2="125" y2="30"/>
+                                        <line class="mini-edge" data-edge="A-C" x1="42" y1="72" x2="125" y2="114"/>
+                                        <line class="mini-edge" data-edge="B-D" x1="125" y1="30" x2="220" y2="30"/>
+                                        <line class="mini-edge" data-edge="B-E" x1="125" y1="30" x2="220" y2="72"/>
+                                        <line class="mini-edge" data-edge="C-F" x1="125" y1="114" x2="220" y2="114"/>
+                                        <line class="mini-edge" data-edge="E-F" x1="220" y1="72" x2="220" y2="114"/>
+                                        <line class="mini-edge" data-edge="D-G" x1="220" y1="30" x2="350" y2="72"/>
+                                        <line class="mini-edge" data-edge="E-G" x1="220" y1="72" x2="350" y2="72"/>
+                                        <line class="mini-edge" data-edge="F-G" x1="220" y1="114" x2="350" y2="72"/>
+                                    </g>
+                                    <g class="mini-node" data-node="A"><circle cx="42" cy="72" r="15"/><text x="42" y="72">A</text></g>
+                                    <g class="mini-node" data-node="B"><circle cx="125" cy="30" r="15"/><text x="125" y="30">B</text></g>
+                                    <g class="mini-node" data-node="C"><circle cx="125" cy="114" r="15"/><text x="125" y="114">C</text></g>
+                                    <g class="mini-node" data-node="D"><circle cx="220" cy="30" r="15"/><text x="220" y="30">D</text></g>
+                                    <g class="mini-node" data-node="E"><circle cx="220" cy="72" r="15"/><text x="220" y="72">E</text></g>
+                                    <g class="mini-node" data-node="F"><circle cx="220" cy="114" r="15"/><text x="220" y="114">F</text></g>
+                                    <g class="mini-node goal" data-node="G"><circle cx="350" cy="72" r="15"/><text x="350" y="72">G</text></g>
+                                    <text x="42" y="135" text-anchor="middle" font-size="8" font-family="monospace" fill="#525252">START</text>
+                                    <text x="350" y="135" text-anchor="middle" font-size="8" font-family="monospace" fill="#991b1b">DESTINATION</text>
+                                </svg>
+                                <p class="mini-caption"></p>
+                                <p class="mini-step"></p>
+                                <button type="button" class="mini-next">Next Step</button>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -310,7 +430,141 @@
             }
         });
 
-        // Real-time Ward Search Filter Functionality
+
+        // ============================================================
+        // IN-CARD ALGORITHM EXPLANATIONS
+        // Each card has a small visual that explains the algorithm
+        // in plain English without changing the real backend results.
+        // ============================================================
+        const miniAlgorithmInfo = {
+            "Uniform Cost Search": {
+                short: "Chooses the cheapest journey so far.",
+                caption: "Like comparing taxi fares: always continue with the route that has cost the least up to now.",
+                steps: [
+                    ["A", "Start here. Compare the available route costs.", null],
+                    ["B", "B is cheaper to reach than C, so choose B.", "A-B"],
+                    ["D", "Continue with the lowest total cost available.", "B-D"],
+                    ["E", "E is now the cheapest unfinished option.", "B-E"],
+                    ["G", "The destination is reached.", "E-G"]
+                ]
+            },
+            "BFS": {
+                short: "Checks nearby locations before going farther.",
+                caption: "Like searching a building floor by floor: first everything nearby, then the next level.",
+                steps: [
+                    ["A", "Start at A.", null],
+                    ["B", "Check the first nearby location.", "A-B"],
+                    ["C", "Finish checking locations at the same distance.", "A-C"],
+                    ["D", "Now move one level farther away.", "B-D"],
+                    ["G", "Destination found.", "D-G"]
+                ]
+            },
+            "Greedy Best First Search": {
+                short: "Picks the option that looks closest to the destination.",
+                caption: "Like looking at a map and choosing the road that appears to point most directly toward your destination.",
+                steps: [
+                    ["A", "Look at the available directions.", null],
+                    ["B", "B appears closer to the destination.", "A-B"],
+                    ["E", "E looks more promising than the other choices.", "B-E"],
+                    ["G", "The destination is reached.", "E-G"]
+                ]
+            },
+            "A* Search": {
+                short: "Balances cost already travelled with distance left.",
+                caption: "Like choosing a route by asking: how much have I travelled, and how much farther do I probably have to go?",
+                steps: [
+                    ["A", "Start with cost travelled = 0.", null],
+                    ["B", "Compare travel cost plus estimated distance left.", "A-B"],
+                    ["E", "Choose the best combined option.", "B-E"],
+                    ["G", "Destination reached; remaining distance is 0.", "E-G"]
+                ]
+            },
+            "DFS": {
+                short: "Follows one route deeply before trying another.",
+                caption: "Like walking down one corridor until you reach the end; if it fails, walk back and try another corridor.",
+                steps: [
+                    ["A", "Choose a branch.", null],
+                    ["B", "Follow this branch deeper.", "A-B"],
+                    ["D", "Keep going before considering alternatives.", "B-D"],
+                    ["G", "This branch reaches the destination.", "D-G"]
+                ]
+            }
+        };
+
+        document.querySelectorAll(".algo-mini").forEach(card => {
+            const algorithm = card.dataset.algoCard;
+            const info = miniAlgorithmInfo[algorithm];
+            if (!info) return;
+
+            const toggle = card.querySelector(".algo-mini-toggle");
+            const panel = card.querySelector(".algo-mini-panel");
+            const caption = card.querySelector(".mini-caption");
+            const stepText = card.querySelector(".mini-step");
+            const next = card.querySelector(".mini-next");
+            const short = card.querySelector(".algo-mini-short");
+            const nodes = {};
+            card.querySelectorAll(".mini-node").forEach(node => nodes[node.dataset.node] = node);
+            const edges = {};
+            card.querySelectorAll(".mini-edge").forEach(edge => edges[edge.dataset.edge] = edge);
+
+            let step = 0;
+
+            short.textContent = info.short;
+
+            function reset() {
+                Object.values(nodes).forEach(n => n.classList.remove("current", "visited"));
+                nodes["G"].classList.add("goal");
+                Object.values(edges).forEach(e => e.classList.remove("active"));
+            }
+
+            function render() {
+                reset();
+                const current = info.steps[step];
+
+                info.steps.slice(0, step).forEach((item, index) => {
+                    if (item[0] !== "A" && item[0] !== "G") {
+                        nodes[item[0]].classList.add("visited");
+                    }
+                    if (item[2] && edges[item[2]]) {
+                        edges[item[2]].classList.add("active");
+                    }
+                });
+
+                if (current[0] !== "A" && current[0] !== "G") {
+                    nodes[current[0]].classList.add("current");
+                }
+                if (current[0] === "G") {
+                    nodes["G"].classList.remove("goal");
+                    nodes["G"].classList.add("current");
+                }
+                if (current[2] && edges[current[2]]) {
+                    edges[current[2]].classList.add("active");
+                }
+
+                caption.textContent = info.caption;
+                stepText.textContent = `Step ${step + 1}/${info.steps.length}: ${current[1]}`;
+                next.textContent = step >= info.steps.length - 1 ? "Restart" : "Next Step";
+            }
+
+            toggle.addEventListener("click", () => {
+                const open = panel.classList.toggle("open");
+                toggle.textContent = open ? "Hide" : "Show";
+                if (open) render();
+            });
+
+            next.addEventListener("click", () => {
+                if (!panel.classList.contains("open")) {
+                    panel.classList.add("open");
+                    toggle.textContent = "Hide";
+                }
+                step = step >= info.steps.length - 1 ? 0 : step + 1;
+                render();
+            });
+
+            render();
+        });
+
+                // Real-time Ward Search Filter Functionality
         const searchInput = document.getElementById('wardSearch');
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
