@@ -41,17 +41,17 @@
         <!-- Quick KPI Metric Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Total Models Analyzed</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">5 Models</p>
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Total Algorithms Analyzed</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">5 Algorithms</p>
                 <span class="text-xs text-emerald-700 font-medium mt-1 block">Full network simulation complete</span>
             </div>
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Top Routing Strategy</span>
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Best Algorithm</span>
                 <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 0 %}{{ best_two[0] }}{% else %}Pending{% endif %}</p>
                 <span class="text-xs text-indigo-700 font-medium mt-1 block">Highest overall optimization balance</span>
             </div>
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Secondary Optimal Choice</span>
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Second Best Algorithm</span>
                 <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 1 %}{{ best_two[1] }}{% else %}Pending{% endif %}</p>
                 <span class="text-xs text-amber-700 font-medium mt-1 block">Reliable alternate corridor finder</span>
             </div>
@@ -66,7 +66,7 @@
             <div class="lg:col-span-7 bg-white border border-neutral-300 p-8 shadow-sm space-y-6 hover:shadow-md transition">
                 <div class="border-b border-neutral-200 pb-4 flex justify-between items-center">
                     <div>
-                        <h2 class="editorial-title text-xl font-bold text-neutral-900">Routing Model Evaluations</h2>
+                        <h2 class="editorial-title text-xl font-bold text-neutral-900">Algorithm Evaluations</h2>
                         <p class="text-xs text-neutral-500 mt-1">Comparing how different route planners navigate Mumbai's transit layout.</p>
                     </div>
                     <span class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200">Live Backend Feed</span>
@@ -128,7 +128,7 @@
                             
                             <div class="algo-mini-head">
                                 <div>
-                                    <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Route Simulation & Score Justification</span>
+                                    <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Route Simulation</span>
                                     <p class="text-[11px] font-medium text-neutral-900 mt-0.5 algo-mini-short"></p>
                                 </div>
                                 <button type="button" class="algo-mini-toggle">View Map</button>
@@ -154,8 +154,8 @@
                 <div>
                     <div class="border-b border-neutral-800 pb-4 flex justify-between items-center">
                         <div>
-                            <h2 class="editorial-title text-xl font-bold text-white">Selected Best Two Models</h2>
-                            <p class="text-xs text-neutral-400 mt-1">Driving our final infrastructure priority index.</p>
+                            <h2 class="editorial-title text-xl font-bold text-white">Selected Best Two Algorithms</h2>
+                            <p class="text-xs text-neutral-400 mt-1">Driving our final outcome.</p>
                         </div>
                         <span class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700">Active</span>
                     </div>
@@ -184,7 +184,7 @@
         <section id="analytics" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
                 <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Prioritized Infrastructure Score</h3>
+                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Accesibility Gap Score</h3>
                     <span class="text-xs font-mono text-neutral-500">FINAL PRIORITY METRIC</span>
                 </div>
                 <div class="relative h-80 w-full">
@@ -208,7 +208,7 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-neutral-300 p-6">
                 <div>
                     <h2 class="editorial-title text-xl font-bold text-neutral-900">Ward Intelligence & Target Lists</h2>
-                    <p class="text-xs text-neutral-500 mt-0.5">Explore identified transit deserts and recommended infrastructure expansion zones.</p>
+                    <p class="text-xs text-neutral-500 mt-0.5">Explore identified transit deserts and areas to be prioritized.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <input type="text" id="wardSearch" placeholder="Search ward or location..." class="bg-[#f4f4f0] border border-neutral-300 px-4 py-2 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 transition w-full sm:w-60">
@@ -236,7 +236,7 @@
                 <!-- Recommended Expansion Zones -->
                 <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
                     <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Top Prioritized Expansion Zones</h3>
+                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Areas that could be prioritized</h3>
                         <span class="text-xs font-mono text-neutral-500">TOP 5 RANKED</span>
                     </div>
                     <div id="prioritizedList" class="space-y-3 max-h-80 overflow-y-auto pr-2">
