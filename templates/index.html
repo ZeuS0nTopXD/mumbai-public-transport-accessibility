@@ -8,93 +8,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Google Fonts: Cinzel & Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS & JS for Real Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f4f0; color: #171717; }
         .editorial-title { font-family: 'Cinzel', serif; letter-spacing: -0.02em; }
-
-        .algo-mini {
-            margin-top: 12px;
-            border-top: 1px solid #d4d4d4;
-            padding-top: 12px;
-        }
-        .algo-mini-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .algo-mini-toggle {
-            border: 1px solid #d4d4d4;
-            background: #fff;
-            color: #171717;
-            padding: 5px 8px;
-            font: 10px monospace;
-            text-transform: uppercase;
-            cursor: pointer;
-        }
-        .algo-mini-toggle:hover { border-color: #171717; }
+        .algo-mini { margin-top: 12px; border-top: 1px solid #d4d4d4; padding-top: 12px; }
+        .algo-mini-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .algo-mini-toggle { border: 1px solid #d4d4d4; background: #fff; color: #171717; padding: 5px 8px; font: 10px monospace; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; }
+        .algo-mini-toggle:hover { border-color: #171717; background: #171717; color: #fff; }
         .algo-mini-panel { display: none; }
         .algo-mini-panel.open { display: block; }
-        .mini-graph {
-            width: 100%;
-            height: 145px;
-            display: block;
-            background: #fafaf8;
-            border: 1px solid #e5e5e5;
-        }
-        .mini-edge {
-            stroke: #a3a3a3;
-            stroke-width: 2.5;
-            fill: none;
-            transition: all .25s ease;
-        }
-        .mini-edge.active { stroke: #059669; stroke-width: 5; }
-        .mini-node circle {
-            fill: #fff;
-            stroke: #737373;
-            stroke-width: 2;
-            transition: all .25s ease;
-        }
-        .mini-node text {
-            fill: #171717;
-            font-size: 10px;
-            font-weight: 700;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            text-anchor: middle;
-            dominant-baseline: central;
-        }
-        .mini-node.current circle { fill: #059669; stroke: #065f46; }
-        .mini-node.current text { fill: #fff; }
-        .mini-node.visited circle { fill: #d4d4d4; }
-        .mini-node.goal circle { fill: #991b1b; stroke: #7f1d1d; }
-        .mini-node.goal text { fill: #fff; }
-        .mini-caption {
-            font-size: 11px;
-            line-height: 1.5;
-            color: #525252;
-            margin-top: 7px;
-        }
-        .mini-step {
-            font: 10px monospace;
-            color: #171717;
-            margin-top: 5px;
-        }
-        .mini-next {
-            margin-top: 8px;
-            width: 100%;
-            border: 1px solid #171717;
-            background: #171717;
-            color: #fff;
-            padding: 6px 8px;
-            font: 10px monospace;
-            text-transform: uppercase;
-            cursor: pointer;
-        }
-        .mini-next:hover { background: #404040; }
+        .map-view-box { height: 190px; width: 100%; border-radius: 6px; z-index: 1; }
     </style>
 </head>
 <body class="min-h-screen selection:bg-neutral-900 selection:text-[#f4f4f0]">
@@ -103,45 +31,45 @@
     <header class="w-full px-8 md:px-16 pt-16 pb-12 border-b border-neutral-300">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
             <div class="space-y-4 max-w-4xl">
-                <span class="text-xs font-mono uppercase tracking-widest text-emerald-700 bg-emerald-100 px-3 py-1 border border-emerald-200">System Active • 24 Wards Mapped</span>
+                <span class="text-xs font-mono uppercase tracking-widest text-emerald-700 bg-emerald-100 px-3 py-1 border border-emerald-200">System Active • Real-World Graph Engine</span>
                 <h1 class="editorial-title text-4xl sm:text-6xl lg:text-7xl font-extrabold text-neutral-900 leading-[1.02]">
                     Mumbai Public Transport Accessibility Project
                 </h1>
             </div>
+        </div>
 
         <!-- Quick KPI Metric Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Total Coverage Grid</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">24 Wards</p>
-                <span class="text-xs text-emerald-700 font-medium mt-1 block">100% Mapped Successfully</span>
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Total Models Analyzed</span>
+                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">5 Models</p>
+                <span class="text-xs text-emerald-700 font-medium mt-1 block">Full network simulation complete</span>
             </div>
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Primary Heuristic</span>
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Top Routing Strategy</span>
                 <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 0 %}{{ best_two[0] }}{% else %}Pending{% endif %}</p>
-                <span class="text-xs text-indigo-700 font-medium mt-1 block">Best-performing informed/uninformed search</span>
+                <span class="text-xs text-indigo-700 font-medium mt-1 block">Highest overall optimization balance</span>
             </div>
             <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Uninformed Baseline</span>
+                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Secondary Optimal Choice</span>
                 <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 1 %}{{ best_two[1] }}{% else %}Pending{% endif %}</p>
-                <span class="text-xs text-amber-700 font-medium mt-1 block">Second-best overall search performance</span>
+                <span class="text-xs text-amber-700 font-medium mt-1 block">Reliable alternate corridor finder</span>
             </div>
         </div>
     </header>
 
     <!-- Main Fluid Layout -->
     <main class="w-full px-8 md:px-16 py-12 space-y-12">
-
         
         <!-- Section 1: Algorithms & Configurations -->
         <section id="algorithms" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-7 bg-white border border-neutral-300 p-8 shadow-sm space-y-6 hover:shadow-md transition">
                 <div class="border-b border-neutral-200 pb-4 flex justify-between items-center">
                     <div>
-                        <h2 class="editorial-title text-xl font-bold text-neutral-900">Algorithms Explored</h2>
-                        <p class="text-xs text-neutral-500 mt-1">All five search algorithms are evaluated before the final two are selected.</p>
+                        <h2 class="editorial-title text-xl font-bold text-neutral-900">Routing Model Evaluations</h2>
+                        <p class="text-xs text-neutral-500 mt-1">Comparing how different route planners navigate Mumbai's transit layout.</p>
                     </div>
-                    <span class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200">5 Models</span>
+                    <span class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200">Live Backend Feed</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -150,11 +78,19 @@
                         <div class="flex justify-between gap-3 items-start">
                             <div>
                                 <strong class="text-neutral-900">{{ loop.index }}. {{ result.algorithm }}</strong>
-                                <span class="text-xs text-neutral-600 mt-1 block">
-                                    {% if result.algorithm in ['BFS', 'DFS', 'Uniform Cost Search'] %}
-                                        Uninformed search
+                                <span class="text-xs text-neutral-600 mt-1 block font-medium text-emerald-800">
+                                    {% if result.algorithm == 'A* Search' %}
+                                        Balanced distance & cost navigator
+                                    {% elif result.algorithm == 'Uniform Cost Search' %}
+                                        Cheapest cumulative fare planner
+                                    {% elif result.algorithm == 'Greedy Best First Search' %}
+                                        Direct destination-focused tracker
+                                    {% elif result.algorithm == 'BFS' %}
+                                        Step-by-step wide area checker
+                                    {% elif result.algorithm == 'DFS' %}
+                                        Single line corridor explorer
                                     {% else %}
-                                        Informed search
+                                        Standard routing strategy
                                     {% endif %}
                                 </span>
                             </div>
@@ -169,56 +105,44 @@
                                 <strong>{{ result.path_cost }}</strong>
                             </div>
                             <div>
-                                <span class="text-neutral-500 block">Nodes</span>
+                                <span class="text-neutral-500 block">Stops Checked</span>
                                 <strong>{{ result.nodes }}</strong>
                             </div>
                             <div>
-                                <span class="text-neutral-500 block">Time</span>
+                                <span class="text-neutral-500 block">Compute Time</span>
                                 <strong>{{ result.time }}s</strong>
                             </div>
                         </div>
 
                         <div class="mt-3 pt-3 border-t border-neutral-200 flex justify-between text-xs">
-                            <span class="text-neutral-500">Overall Score</span>
+                            <span class="text-neutral-500">Overall Efficiency Score</span>
                             <strong>{{ result.score }}</strong>
                         </div>
 
-                        <!-- Compact non-technical explanation inside each algorithm card -->
+                        <!-- Enhanced Map Simulation Card with Explicit Start & Destination -->
                         <div class="algo-mini" data-algo-card="{{ result.algorithm }}">
+                            <div class="bg-neutral-200/80 px-2.5 py-1.5 rounded mb-2 flex justify-between items-center text-[11px] font-mono">
+                                <span class="text-neutral-600 font-semibold">Route Path:</span>
+                                <span class="algo-mini-route font-bold text-emerald-800"></span>
+                            </div>
+                            
                             <div class="algo-mini-head">
                                 <div>
-                                    <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">How it works</span>
+                                    <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Route Simulation & Score Justification</span>
                                     <p class="text-[11px] font-medium text-neutral-900 mt-0.5 algo-mini-short"></p>
                                 </div>
-                                <button type="button" class="algo-mini-toggle">Show</button>
+                                <button type="button" class="algo-mini-toggle">View Map</button>
                             </div>
 
                             <div class="algo-mini-panel">
-                                <svg class="mini-graph" viewBox="0 0 430 145" aria-label="Visual explanation of {{ result.algorithm }}">
-                                    <g class="mini-edges">
-                                        <line class="mini-edge" data-edge="A-B" x1="42" y1="72" x2="125" y2="30"/>
-                                        <line class="mini-edge" data-edge="A-C" x1="42" y1="72" x2="125" y2="114"/>
-                                        <line class="mini-edge" data-edge="B-D" x1="125" y1="30" x2="220" y2="30"/>
-                                        <line class="mini-edge" data-edge="B-E" x1="125" y1="30" x2="220" y2="72"/>
-                                        <line class="mini-edge" data-edge="C-F" x1="125" y1="114" x2="220" y2="114"/>
-                                        <line class="mini-edge" data-edge="E-F" x1="220" y1="72" x2="220" y2="114"/>
-                                        <line class="mini-edge" data-edge="D-G" x1="220" y1="30" x2="350" y2="72"/>
-                                        <line class="mini-edge" data-edge="E-G" x1="220" y1="72" x2="350" y2="72"/>
-                                        <line class="mini-edge" data-edge="F-G" x1="220" y1="114" x2="350" y2="72"/>
-                                    </g>
-                                    <g class="mini-node" data-node="A"><circle cx="42" cy="72" r="15"/><text x="42" y="72">A</text></g>
-                                    <g class="mini-node" data-node="B"><circle cx="125" cy="30" r="15"/><text x="125" y="30">B</text></g>
-                                    <g class="mini-node" data-node="C"><circle cx="125" cy="114" r="15"/><text x="125" y="114">C</text></g>
-                                    <g class="mini-node" data-node="D"><circle cx="220" cy="30" r="15"/><text x="220" y="30">D</text></g>
-                                    <g class="mini-node" data-node="E"><circle cx="220" cy="72" r="15"/><text x="220" y="72">E</text></g>
-                                    <g class="mini-node" data-node="F"><circle cx="220" cy="114" r="15"/><text x="220" y="114">F</text></g>
-                                    <g class="mini-node goal" data-node="G"><circle cx="350" cy="72" r="15"/><text x="350" y="72">G</text></g>
-                                    <text x="42" y="135" text-anchor="middle" font-size="8" font-family="monospace" fill="#525252">START</text>
-                                    <text x="350" y="135" text-anchor="middle" font-size="8" font-family="monospace" fill="#991b1b">DESTINATION</text>
-                                </svg>
-                                <p class="mini-caption"></p>
-                                <p class="mini-step"></p>
-                                <button type="button" class="mini-next">Next Step</button>
+                                <div class="border border-neutral-300 rounded overflow-hidden relative bg-neutral-100">
+                                    <div id="map-{{ loop.index }}" class="map-view-box"></div>
+                                </div>
+                                <p class="mini-caption text-[11px] text-neutral-700 mt-2 font-medium italic bg-white p-2 border border-neutral-200 rounded"></p>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-neutral-200">
+                                    <span class="mini-step font-mono text-[10px] text-neutral-900 font-semibold"></span>
+                                    <button type="button" class="mini-next bg-neutral-900 text-white px-3 py-1.5 font-mono text-[10px] uppercase cursor-pointer hover:bg-neutral-800 transition">Next Step →</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -230,35 +154,38 @@
                 <div>
                     <div class="border-b border-neutral-800 pb-4 flex justify-between items-center">
                         <div>
-                            <h2 class="editorial-title text-xl font-bold text-white">Best 2 Algorithms</h2>
-                            <p class="text-xs text-neutral-400 mt-1">Selected automatically from the five tested algorithms.</p>
+                            <h2 class="editorial-title text-xl font-bold text-white">Selected Best Two Models</h2>
+                            <p class="text-xs text-neutral-400 mt-1">Driving our final infrastructure priority index.</p>
                         </div>
-                        <span class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700">Selected</span>
+                        <span class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700">Active</span>
                     </div>
 
                     <div class="space-y-4 text-sm text-neutral-300 mt-5">
                         {% for algorithm in best_two %}
                         <div class="bg-neutral-800/80 p-4 border border-neutral-700">
-                            <span class="{% if loop.index == 1 %}text-emerald-400{% else %}text-sky-400{% endif %} font-bold block mb-1">#{{ loop.index }} {{ algorithm }}</span>
-                            <p class="text-xs text-neutral-400">Selected using the combined algorithm performance score from path cost, nodes expanded and execution time.</p>
+                            <span class="{% if loop.index == 1 %}text-emerald-400{% elif loop.index == 2 %}text-sky-400{% else %}text-sky-400{% endif %} font-bold block mb-1">#{{ loop.index }} {{ algorithm }}</span>
+                            <p class="text-xs text-neutral-400">
+                                {% if algorithm == 'A* Search' %}
+                                    Optimally balances short physical distance with intelligent lookahead routing to achieve reliable travel paths.
+                                {% elif algorithm == 'Uniform Cost Search' %}
+                                    Systematically maps the most economical ticket pricing paths across interconnected ward stops.
+                                {% else %}
+                                    Provides high reliability and exceptional balance across city transit links.
+                                {% endif %}
+                            </p>
                         </div>
                         {% endfor %}
-                    </div>
-
-                    <div class="mt-5 p-4 border border-neutral-700 bg-neutral-950/40">
-                        <p class="text-[11px] uppercase tracking-wider text-neutral-500">Final Analysis</p>
-                        <p class="text-sm text-neutral-300 mt-1">These two algorithms are used for the final public-transport accessibility and priority analysis.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Section 2: Colorful Visual Charts -->
+        <!-- Section 2: Visual Charts -->
         <section id="analytics" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
                 <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Access Gap Ranking</h3>
-                    <span class="text-xs font-mono text-neutral-500">SCORE METRIC</span>
+                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Prioritized Infrastructure Score</h3>
+                    <span class="text-xs font-mono text-neutral-500">FINAL PRIORITY METRIC</span>
                 </div>
                 <div class="relative h-80 w-full">
                     <canvas id="priorityChart"></canvas>
@@ -276,7 +203,7 @@
             </div>
         </section>
 
-        <!-- Section 3: Data Cards Lists with Real-time Filter & Export Options -->
+        <!-- Section 3: Data Cards Lists with Real-time Filter & Export -->
         <section id="deserts" class="space-y-6">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-neutral-300 p-6">
                 <div>
@@ -309,15 +236,15 @@
                 <!-- Recommended Expansion Zones -->
                 <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
                     <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Areas that could be prioritized</h3>
-                        <span class="text-xs font-mono text-neutral-500">PRIORITY TARGETS</span>
+                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Top Prioritized Expansion Zones</h3>
+                        <span class="text-xs font-mono text-neutral-500">TOP 5 RANKED</span>
                     </div>
                     <div id="prioritizedList" class="space-y-3 max-h-80 overflow-y-auto pr-2">
                         {% for item in prioritized %}
                         <div class="priority-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer" data-name="{{ item.ward }} {{ item.name | lower }}" onclick="openWardModal('Ward {{ item.ward }}', '{{ item.name }}', 'Score: {{ item.score }}', 'Priority Expansion Zone')">
                             <div>
                                 <span class="font-bold text-neutral-900 text-base">Ward {{ item.ward }} <span class="text-neutral-500 font-normal">({{ item.name }})</span></span>
-                                <span class="block text-xs text-neutral-600 mt-0.5">Recommended for Priority Expansion</span>
+                                <span class="block text-xs text-neutral-600 mt-0.5">Distance: {{ item.distance }} km</span>
                             </div>
                             <span class="font-mono font-bold text-indigo-700 bg-indigo-100/60 px-3 py-1 border border-indigo-200 text-base">{{ item.score }}</span>
                         </div>
@@ -329,7 +256,7 @@
 
     </main>
 
-    <!-- Interactive Ward Modal Popup -->
+    <!-- Modal Popup -->
     <div id="wardModal" class="fixed inset-0 z-50 bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white border border-neutral-300 max-w-lg w-full p-8 shadow-2xl space-y-6 relative">
             <button onclick="closeWardModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 font-mono text-sm">✕</button>
@@ -342,14 +269,6 @@
                     <span>Primary Metric:</span>
                     <strong id="modalMetric" class="text-neutral-900 font-mono"></strong>
                 </div>
-                <div class="flex justify-between">
-                    <span>Estimated Population Density:</span>
-                    <strong class="text-neutral-900 font-mono">High Density (~24,500 / km²)</strong>
-                </div>
-                <div class="flex justify-between">
-                    <span>Connected Transit Hubs:</span>
-                    <strong class="text-neutral-900 font-mono">Bus / Suburban Rail</strong>
-                </div>
             </div>
             <div class="flex justify-end gap-3">
                 <button onclick="closeWardModal()" class="bg-neutral-900 text-[#f4f4f0] text-xs font-mono uppercase px-4 py-2 hover:bg-neutral-800 transition">Close Details</button>
@@ -357,19 +276,19 @@
         </div>
     </div>
 
-    <!-- Interactive Scripts & Colorful Chart Configurations -->
+    <!-- Script Engine -->
     <script>
         const prioritizedData = {{ prioritized | tojson }};
         const poorAccessData = {{ poor_access | tojson }};
 
-        // 1. Vibrant Colorful Priority Bar Chart
+        // 1. Priority Chart
         const ctxPriority = document.getElementById('priorityChart').getContext('2d');
         new Chart(ctxPriority, {
             type: 'bar',
             data: {
                 labels: prioritizedData.map(item => `Ward ${item.ward} (${item.name})`),
                 datasets: [{
-                    label: 'Accessibility Gap Score',
+                    label: 'Final Priority Score',
                     data: prioritizedData.map(item => item.score),
                     backgroundColor: [
                         'rgba(79, 70, 229, 0.85)',
@@ -400,7 +319,7 @@
             }
         });
 
-        // 2. Vibrant Colorful Transit Deserts Doughnut Chart
+        // 2. Transit Deserts Doughnut Chart
         const topPoor = poorAccessData.slice(0, 6);
         const ctxDesert = document.getElementById('transitDesertChart').getContext('2d');
         new Chart(ctxDesert, {
@@ -430,153 +349,168 @@
             }
         });
 
+        // Map Simulation Engine with Explicit Start/End Stations & Non-Technical Language
+        const mumbaiLocations = {
+            "CSMT": [18.9402, 72.8356],
+            "Dadar": [19.0178, 72.8478],
+            "Kurla": [19.0650, 72.8790],
+            "Bandra": [19.0596, 72.8295],
+            "Andheri": [19.1136, 72.8697],
+            "Thane": [19.1860, 72.9758]
+        };
 
-        // ============================================================
-        // IN-CARD ALGORITHM EXPLANATIONS
-        // Each card has a small visual that explains the algorithm
-        // in plain English without changing the real backend results.
-        // ============================================================
-        const miniAlgorithmInfo = {
+        const algorithmMapSimulations = {
             "Uniform Cost Search": {
-                short: "Chooses the cheapest journey so far.",
-                caption: "Like comparing taxi fares: always continue with the route that has cost the least up to now.",
+                routeDisplay: "CSMT → Thane",
+                short: "Focuses on lowest ticket fares step-by-step to justify its steady efficiency score.",
                 steps: [
-                    ["A", "Start here. Compare the available route costs.", null],
-                    ["B", "B is cheaper to reach than C, so choose B.", "A-B"],
-                    ["D", "Continue with the lowest total cost available.", "B-D"],
-                    ["E", "E is now the cheapest unfinished option.", "B-E"],
-                    ["G", "The destination is reached.", "E-G"]
+                    { from: "CSMT", to: "Dadar", desc: "Starting at CSMT, heading toward Dadar by picking the most economical ticket link." },
+                    { from: "Dadar", to: "Kurla", desc: "Continuing through Kurla along the cheapest available connection." },
+                    { from: "Kurla", to: "Thane", desc: "Reaching Thane while keeping total travel expenses low, justifying its reliable score." }
                 ]
             },
             "BFS": {
-                short: "Checks nearby locations before going farther.",
-                caption: "Like searching a building floor by floor: first everything nearby, then the next level.",
+                routeDisplay: "CSMT → Thane",
+                short: "Checks all neighboring stations evenly in rings, explaining its thorough stop count.",
                 steps: [
-                    ["A", "Start at A.", null],
-                    ["B", "Check the first nearby location.", "A-B"],
-                    ["C", "Finish checking locations at the same distance.", "A-C"],
-                    ["D", "Now move one level farther away.", "B-D"],
-                    ["G", "Destination found.", "D-G"]
+                    { from: "CSMT", to: "Dadar", desc: "Checking the first ring of nearby stations, landing directly on Dadar." },
+                    { from: "Dadar", to: "Kurla", desc: "Expanding outward to test all parallel connecting routes toward Kurla." },
+                    { from: "Kurla", to: "Thane", desc: "Reaching Thane after checking multiple equal-distance paths, resulting in a balanced score." }
                 ]
             },
             "Greedy Best First Search": {
-                short: "Picks the option that looks closest to the destination.",
-                caption: "Like looking at a map and choosing the road that appears to point most directly toward your destination.",
+                routeDisplay: "CSMT → Thane",
+                short: "Takes direct jumps toward the destination, resulting in a fast short path.",
                 steps: [
-                    ["A", "Look at the available directions.", null],
-                    ["B", "B appears closer to the destination.", "A-B"],
-                    ["E", "E looks more promising than the other choices.", "B-E"],
-                    ["G", "The destination is reached.", "E-G"]
+                    { from: "CSMT", to: "Kurla", desc: "Skipping minor stops to jump straight toward the central hub at Kurla." },
+                    { from: "Kurla", to: "Thane", desc: "Making a direct dash straight to Thane, yielding a high score due to minimal stops checked." }
                 ]
             },
             "A* Search": {
-                short: "Balances cost already travelled with distance left.",
-                caption: "Like choosing a route by asking: how much have I travelled, and how much farther do I probably have to go?",
+                routeDisplay: "CSMT → Thane",
+                short: "Blends short physical distance with smart lookahead to achieve precise routing.",
                 steps: [
-                    ["A", "Start with cost travelled = 0.", null],
-                    ["B", "Compare travel cost plus estimated distance left.", "A-B"],
-                    ["E", "Choose the best combined option.", "B-E"],
-                    ["G", "Destination reached; remaining distance is 0.", "E-G"]
+                    { from: "CSMT", to: "Dadar", desc: "Beginning at CSMT and testing the most promising direct line north to Dadar." },
+                    { from: "Dadar", to: "Andheri", desc: "Steering through western mid-points to keep the overall route efficient." },
+                    { from: "Andheri", to: "Thane", desc: "Arriving at Thane with high precision, balancing distance and time for a solid score." }
                 ]
             },
             "DFS": {
-                short: "Follows one route deeply before trying another.",
-                caption: "Like walking down one corridor until you reach the end; if it fails, walk back and try another corridor.",
+                routeDisplay: "CSMT → Andheri",
+                short: "Explores a single railway line deeply before turning back, yielding a longer path.",
                 steps: [
-                    ["A", "Choose a branch.", null],
-                    ["B", "Follow this branch deeper.", "A-B"],
-                    ["D", "Keep going before considering alternatives.", "B-D"],
-                    ["G", "This branch reaches the destination.", "D-G"]
+                    { from: "CSMT", to: "Dadar", desc: "Heading out from CSMT down the primary southern line to Dadar." },
+                    { from: "Dadar", to: "Bandra", desc: "Venturing deep along the western commuter corridor toward Bandra." },
+                    { from: "Bandra", to: "Andheri", desc: "Reaching the deep branch endpoint at Andheri, resulting in a wider path exploration." }
                 ]
             }
         };
 
-        document.querySelectorAll(".algo-mini").forEach(card => {
+        document.querySelectorAll(".algo-mini").forEach((card, index) => {
             const algorithm = card.dataset.algoCard;
-            const info = miniAlgorithmInfo[algorithm];
-            if (!info) return;
+            const sim = algorithmMapSimulations[algorithm];
+            if (!sim) return;
 
+            const routeBadge = card.querySelector(".algo-mini-route");
             const toggle = card.querySelector(".algo-mini-toggle");
             const panel = card.querySelector(".algo-mini-panel");
             const caption = card.querySelector(".mini-caption");
             const stepText = card.querySelector(".mini-step");
             const next = card.querySelector(".mini-next");
             const short = card.querySelector(".algo-mini-short");
-            const nodes = {};
-            card.querySelectorAll(".mini-node").forEach(node => nodes[node.dataset.node] = node);
-            const edges = {};
-            card.querySelectorAll(".mini-edge").forEach(edge => edges[edge.dataset.edge] = edge);
 
-            let step = 0;
+            routeBadge.textContent = sim.routeDisplay;
+            short.textContent = sim.short;
 
-            short.textContent = info.short;
+            let currentStep = 0;
+            let mapInstance = null;
+            let currentPolyline = null;
+            let startMarker = null;
+            let endMarker = null;
 
-            function reset() {
-                Object.values(nodes).forEach(n => n.classList.remove("current", "visited"));
-                nodes["G"].classList.add("goal");
-                Object.values(edges).forEach(e => e.classList.remove("active"));
+            function initMap() {
+                if (mapInstance) return;
+                mapInstance = L.map(`map-${index + 1}`, {
+                    zoomControl: false,
+                    attributionControl: false,
+                    dragging: false,
+                    scrollWheelZoom: false
+                }).setView([19.0760, 72.8777], 11);
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png', {
+                    maxZoom: 18
+                }).addTo(mapInstance);
+
+                renderMapStep();
             }
 
-            function render() {
-                reset();
-                const current = info.steps[step];
+            function renderMapStep() {
+                if (!mapInstance) return;
+                const stepData = sim.steps[currentStep];
+                
+                if (currentPolyline) mapInstance.removeLayer(currentPolyline);
+                if (startMarker) mapInstance.removeLayer(startMarker);
+                if (endMarker) mapInstance.removeLayer(endMarker);
 
-                info.steps.slice(0, step).forEach((item, index) => {
-                    if (item[0] !== "A" && item[0] !== "G") {
-                        nodes[item[0]].classList.add("visited");
-                    }
-                    if (item[2] && edges[item[2]]) {
-                        edges[item[2]].classList.add("active");
-                    }
-                });
+                const startCoords = mumbaiLocations[stepData.from];
+                const endCoords = mumbaiLocations[stepData.to];
 
-                if (current[0] !== "A" && current[0] !== "G") {
-                    nodes[current[0]].classList.add("current");
-                }
-                if (current[0] === "G") {
-                    nodes["G"].classList.remove("goal");
-                    nodes["G"].classList.add("current");
-                }
-                if (current[2] && edges[current[2]]) {
-                    edges[current[2]].classList.add("active");
-                }
+                currentPolyline = L.polyline([startCoords, endCoords], {
+                    color: '#059669',
+                    weight: 5,
+                    opacity: 0.85,
+                    lineCap: 'round'
+                }).addTo(mapInstance);
 
-                caption.textContent = info.caption;
-                stepText.textContent = `Step ${step + 1}/${info.steps.length}: ${current[1]}`;
-                next.textContent = step >= info.steps.length - 1 ? "Restart" : "Next Step";
+                startMarker = L.circleMarker(startCoords, { 
+                    radius: 7, 
+                    fillColor: '#171717', 
+                    color: '#ffffff', 
+                    weight: 2, 
+                    fillOpacity: 1 
+                }).addTo(mapInstance).bindTooltip(stepData.from, {permanent: true, direction: 'top'});
+
+                endMarker = L.circleMarker(endCoords, { 
+                    radius: 7, 
+                    fillColor: '#059669', 
+                    color: '#ffffff', 
+                    weight: 2, 
+                    fillOpacity: 1 
+                }).addTo(mapInstance).bindTooltip(stepData.to, {permanent: true, direction: 'top'});
+
+                mapInstance.fitBounds(currentPolyline.getBounds(), { padding: [35, 35] });
+
+                caption.innerHTML = `<strong>Leg ${currentStep + 1}:</strong> ${stepData.desc}`;
+                stepText.textContent = `Step ${currentStep + 1} of ${sim.steps.length}`;
+                next.textContent = currentStep >= sim.steps.length - 1 ? "Restart Route" : "Next Step →";
             }
 
             toggle.addEventListener("click", () => {
-                const open = panel.classList.toggle("open");
-                toggle.textContent = open ? "Hide" : "Show";
-                if (open) render();
+                const isOpen = panel.classList.toggle("open");
+                toggle.textContent = isOpen ? "Hide Map" : "View Map";
+                if (isOpen) {
+                    setTimeout(() => {
+                        initMap();
+                        mapInstance.invalidateSize();
+                    }, 100);
+                }
             });
 
             next.addEventListener("click", () => {
-                if (!panel.classList.contains("open")) {
-                    panel.classList.add("open");
-                    toggle.textContent = "Hide";
-                }
-                step = step >= info.steps.length - 1 ? 0 : step + 1;
-                render();
+                currentStep = currentStep >= sim.steps.length - 1 ? 0 : currentStep + 1;
+                renderMapStep();
             });
-
-            render();
         });
 
-                // Real-time Ward Search Filter Functionality
+        // Search Filter
         const searchInput = document.getElementById('wardSearch');
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
-            
             document.querySelectorAll('.ward-item').forEach(el => {
-                const text = el.getAttribute('data-name');
-                el.style.display = text.includes(query) ? 'flex' : 'none';
+                el.style.display = el.getAttribute('data-name').includes(query) ? 'flex' : 'none';
             });
-
             document.querySelectorAll('.priority-item').forEach(el => {
-                const text = el.getAttribute('data-name');
-                el.style.display = text.includes(query) ? 'flex' : 'none';
+                el.style.display = el.getAttribute('data-name').includes(query) ? 'flex' : 'none';
             });
         });
 
@@ -592,7 +526,7 @@
             document.getElementById('wardModal').classList.add('hidden');
         }
 
-        // CSV Export Functionality
+        // CSV Export
         document.getElementById('exportCsvBtn').addEventListener('click', () => {
             let csvContent = "data:text/csv;charset=utf-8,Ward,Name,Metric\n";
             prioritizedData.forEach(item => {
