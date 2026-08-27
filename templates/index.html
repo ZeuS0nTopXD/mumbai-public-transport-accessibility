@@ -3,547 +3,5276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Mumbai Public Transport Accessibility Project</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <!-- Tailwind CSS -->
+
+    <!-- ====================================================== -->
+    <!-- LIBRARIES                                               -->
+    <!-- ====================================================== -->
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Google Fonts: Cinzel & Plus Jakarta Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Leaflet CSS & JS for Real Maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+    <!-- ====================================================== -->
+    <!-- STYLES                                                  -->
+    <!-- ====================================================== -->
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f4f0; color: #171717; }
-        .editorial-title { font-family: 'Cinzel', serif; letter-spacing: -0.02em; }
-        .algo-mini { margin-top: 12px; border-top: 1px solid #d4d4d4; padding-top: 12px; }
-        .algo-mini-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .algo-mini-toggle { border: 1px solid #d4d4d4; background: #fff; color: #171717; padding: 5px 8px; font: 10px monospace; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; }
-        .algo-mini-toggle:hover { border-color: #171717; background: #171717; color: #fff; }
-        .algo-mini-panel { display: none; }
-        .algo-mini-panel.open { display: block; }
-        .map-view-box { height: 190px; width: 100%; border-radius: 6px; z-index: 1; }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f4f4f0;
+            color: #171717;
+        }
+
+        .editorial-title {
+            font-family: 'Cinzel', serif;
+            letter-spacing: -0.02em;
+        }
+
+        /* ================================================== */
+        /* MAPS                                                */
+        /* ================================================== */
+
+        .route-map {
+            height: 430px;
+            width: 100%;
+            border-radius: 6px;
+            z-index: 1;
+        }
+
+        .mini-route-map {
+            height: 250px;
+            width: 100%;
+            border-radius: 6px;
+            z-index: 1;
+        }
+
+        .learning-map {
+            height: 300px;
+            width: 100%;
+            border-radius: 6px;
+            z-index: 1;
+        }
+
+        .route-summary-map {
+            height: 470px;
+            width: 100%;
+            border-radius: 6px;
+            z-index: 1;
+        }
+
+
+        /* ================================================== */
+        /* SCROLLBARS                                          */
+        /* ================================================== */
+
+        .route-scroll::-webkit-scrollbar,
+        .ward-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .route-scroll::-webkit-scrollbar-thumb,
+        .ward-scroll::-webkit-scrollbar-thumb {
+            background: #d4d4d4;
+            border-radius: 4px;
+        }
+
+
+        /* ================================================== */
+        /* NAVIGATION                                          */
+        /* ================================================== */
+
+        #mainNav {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link.active {
+            color: white !important;
+            background: #262626;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: #10b981;
+        }
+
+
+        /* ================================================== */
+        /* LEARNING CARDS                                      */
+        /* ================================================== */
+
+        .learning-card {
+            background: #fff;
+            border: 1px solid #d4d4d4;
+            box-shadow: 0 1px 2px rgba(0,0,0,.03);
+            transition: .2s ease;
+        }
+
+        .learning-card:hover {
+            border-color: #a3a3a3;
+        }
+
+        .learning-card.active {
+            border-color: #171717;
+            box-shadow: 0 0 0 1px #171717;
+        }
+
+        .learning-step {
+            min-height: 62px;
+        }
+
+        .learning-progress {
+            height: 4px;
+            background: #e5e5e5;
+            overflow: hidden;
+            border-radius: 999px;
+        }
+
+        .learning-progress > div {
+            height: 100%;
+            width: 0;
+            background: #059669;
+            transition: width .35s ease;
+        }
+
+
+        /* ================================================== */
+        /* ROUTE OBJECTIVE                                 */
+        /* ================================================== */
+
+
+
+        /* ================================================== */
+        /* JOURNEY TIMELINE                                    */
+        /* ================================================== */
+
+        .route-key-stop {
+            position: relative;
+            padding-left: 22px;
+        }
+
+        .route-key-stop::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 7px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #059669;
+        }
+
+        .route-key-stop:first-child::before {
+            background: #171717;
+        }
+
+        .route-key-stop:last-child::before {
+            background: #dc2626;
+        }
+
+        .route-key-stop:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 17px;
+            width: 2px;
+            height: calc(100% + 4px);
+            background: #d4d4d4;
+        }
+
+        .route-journey-list {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-height: 520px;
+            overflow-y: auto;
+            padding: 8px 12px 8px 4px;
+        }
+
+        .journey-stop {
+            position: relative;
+            display: grid;
+            grid-template-columns: 32px 1fr;
+            column-gap: 12px;
+            min-height: 64px;
+        }
+
+        .journey-stop:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 30px;
+            bottom: -2px;
+            width: 2px;
+            background: #d4d4d4;
+        }
+
+        .journey-dot {
+            position: relative;
+            z-index: 2;
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #059669;
+            color: white;
+            font: 10px monospace;
+            font-weight: 700;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #d4d4d4;
+        }
+
+        .journey-stop.start .journey-dot {
+            background: #171717;
+        }
+
+        .journey-stop.end .journey-dot {
+            background: #dc2626;
+        }
+
+        .journey-stop-content {
+            padding: 2px 0 18px;
+            min-width: 0;
+        }
+
+        .journey-stop-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #171717;
+            line-height: 1.4;
+        }
+
+        .journey-stop-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .journey-direction {
+            display: inline-block;
+            margin: 0 0 8px 44px;
+            font: 9px monospace;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #737373;
+        }
+
+
+        /* ================================================== */
+        /* ROUTE CARDS                                        */
+        /* ================================================== */
+
+        .route-card {
+            transition:
+                transform .2s ease,
+                box-shadow .2s ease;
+        }
+
+        .route-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(0,0,0,.06);
+        }
+
+        .route-card.best {
+            border-color: #171717;
+            box-shadow: 0 0 0 1px #171717;
+        }
+
+        .route-route-text {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+
+        /* ================================================== */
+        /* MODE BADGES                                        */
+        /* ================================================== */
+
+        .mode-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 9px;
+            border: 1px solid #d4d4d4;
+            background: #fafafa;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .mode-badge.dark {
+            border-color: #404040;
+            background: #262626;
+            color: #f5f5f5;
+        }
+
+        .mode-badge.local {
+            border-color: #a7f3d0;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .mode-badge.metro {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .mode-badge.mono {
+            border-color: #ddd6fe;
+            background: #f5f3ff;
+            color: #6d28d9;
+        }
+
+        .mode-badge.bus {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .mode-badge.mixed {
+            border-color: #fed7aa;
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+
+        /* ================================================== */
+        /* ROUTE TYPE                                         */
+        /* ================================================== */
+
+        .route-type-banner {
+            border: 1px solid #d4d4d4;
+            background: #f7f7f3;
+        }
+
+        /* FRIENDLY ALGORITHM EXPLANATIONS */
+        .friendly-algo-box { background:#fafaf8; border:1px solid #e5e5e5; }
+        .friendly-algo-step { display:flex; gap:10px; align-items:flex-start; }
+        .friendly-algo-icon { width:26px; height:26px; min-width:26px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:#171717; color:#fff; font-size:11px; font-weight:700; }
+        .friendly-algo-choice { border-left:3px solid #059669; padding-left:10px; }
+        .friendly-algo-formula { font-family:monospace; background:#f4f4f0; border:1px solid #e5e5e5; padding:8px 10px; font-size:11px; }
+
+
+        /* ================================================== */
+        /* STATION SEARCH                                     */
+        /* ================================================== */
+
+        .station-select {
+            appearance: auto;
+        }
+
+        .station-picker {
+            position: relative;
+        }
+
+        .station-menu {
+            max-height: 390px;
+        }
+
+        .station-mode {
+            padding: 6px 9px;
+            border: 1px solid #404040;
+            background: #262626;
+            color: #a3a3a3;
+            font: 10px 'Plus Jakarta Sans', sans-serif;
+            cursor: pointer;
+            transition: .15s ease;
+        }
+
+        .station-mode:hover {
+            border-color: #737373;
+            color: #fff;
+        }
+
+        .station-mode.active {
+            background: #059669;
+            border-color: #059669;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .station-result {
+            width: 100%;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid #262626;
+            background: #171717;
+            color: #f5f5f5;
+            cursor: pointer;
+        }
+
+        .station-result:hover {
+            background: #262626;
+        }
+
+        .station-result-name {
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .station-result-meta {
+            margin-top: 3px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 9px;
+            color: #a3a3a3;
+        }
+
+        .station-result-mode {
+            padding: 2px 5px;
+            border: 1px solid #404040;
+            color: #d4d4d4;
+        }
+
+        .station-empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: #737373;
+            font-size: 11px;
+        }
+
+        .station-search::placeholder {
+            color: #737373;
+        }
+
+
+        /* ================================================== */
+        /* SECTION DIVIDERS                                   */
+        /* ================================================== */
+
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-divider-line {
+            height: 1px;
+            background: #d4d4d4;
+            flex: 1;
+        }
+
+        .section-number {
+            font-family: monospace;
+            font-size: 9px;
+            color: #a3a3a3;
+        }
+
+        .section-label {
+            font-family: monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: #a3a3a3;
+            white-space: nowrap;
+        }
+
+
+        /* ================================================== */
+        /* MOBILE                                             */
+        /* ================================================== */
+
+        @media (max-width: 767px) {
+
+            .route-summary-map {
+                height: 350px;
+            }
+
+            .learning-map {
+                height: 260px;
+            }
+
+        }
+
     </style>
 </head>
+
+
 <body class="min-h-screen selection:bg-neutral-900 selection:text-[#f4f4f0]">
 
-    <!-- Editorial Header Section -->
-    <header class="w-full px-8 md:px-16 pt-16 pb-12 border-b border-neutral-300">
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
-            <div class="space-y-4 max-w-4xl">
-                <span class="text-xs font-mono uppercase tracking-widest text-emerald-700 bg-emerald-100 px-3 py-1 border border-emerald-200">System Active •</span>
-                <h1 class="editorial-title text-4xl sm:text-6xl lg:text-7xl font-extrabold text-neutral-900 leading-[1.02]">
-                    Mumbai Public Transport Accessibility Project
-                </h1>
+
+<!-- ========================================================== -->
+<!-- STICKY NAVIGATION                                          -->
+<!-- ========================================================== -->
+
+<nav
+    id="mainNav"
+    class="sticky top-0 z-50 bg-neutral-950/95 text-white border-b border-neutral-800 shadow-lg"
+>
+
+    <div class="w-full px-6 md:px-12 lg:px-16">
+
+        <div class="h-16 flex items-center justify-between">
+
+            <!-- BRAND -->
+
+            <a
+                href="#overview"
+                class="flex items-center gap-3"
+            >
+
+                <div
+                    class="w-9 h-9 bg-black flex items-center justify-center font-bold text-sm"
+                >
+                <img src="..//static/favicon.svg" alt="mumbai-pta-logo" />
+                </div>
+
+
+            </a>
+
+
+            <!-- DESKTOP NAV -->
+
+            <div class="hidden md:flex items-center gap-1">
+
+                <a
+                    href="#overview"
+                    data-section="overview"
+                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                >
+                    Overview
+                </a>
+
+                <a
+                    href="#algorithmLab"
+                    data-section="algorithmLab"
+                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                >
+                    Algorithms
+                </a>
+
+                <a
+                    href="#routePlanner"
+                    data-section="routePlanner"
+                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                >
+                    Route Planner
+                </a>
+
+                <a
+                    href="#algorithms"
+                    data-section="algorithms"
+                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                >
+                    Analysis
+                </a>
+
+                <a
+                    href="#analytics"
+                    data-section="analytics"
+                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                >
+                    Analytics
+                </a>
+
+                <a
+                    href="#deserts"
+                    data-section="deserts"
+                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                >
+                    Wards
+                </a>
+
             </div>
+
+
+            <!-- SYSTEM STATUS -->
+
+            <div
+                class="hidden lg:flex items-center gap-2 text-[9px] font-mono text-neutral-500 border border-neutral-800 px-3 py-2"
+            >
+
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+
+                SYSTEM ACTIVE
+
+            </div>
+
+
+            <!-- MOBILE BUTTON -->
+
+            <button
+                id="mobileMenuBtn"
+                type="button"
+                class="md:hidden text-neutral-300 hover:text-white text-xl"
+                aria-label="Open navigation menu"
+            >
+                ☰
+            </button>
+
         </div>
 
-        <!-- Quick KPI Metric Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
-            <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Total Algorithms Analyzed</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">5 Algorithms</p>
-                <span class="text-xs text-emerald-700 font-medium mt-1 block">Full network simulation complete</span>
-            </div>
-            <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Best Algorithm</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 0 %}{{ best_two[0] }}{% else %}Pending{% endif %}</p>
-                <span class="text-xs text-indigo-700 font-medium mt-1 block">Highest overall optimization balance</span>
-            </div>
-            <div class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition">
-                <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">Second Best Algorithm</span>
-                <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">{% if best_two|length > 1 %}{{ best_two[1] }}{% else %}Pending{% endif %}</p>
-                <span class="text-xs text-amber-700 font-medium mt-1 block">Reliable alternate corridor finder</span>
-            </div>
+
+        <!-- MOBILE MENU -->
+
+        <div
+            id="mobileMenu"
+            class="hidden md:hidden border-t border-neutral-800 py-3 space-y-1"
+        >
+
+            <a
+                href="#overview"
+                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
+            >
+                01 — Overview
+            </a>
+
+            <a
+                href="#algorithmLab"
+                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
+            >
+                02 — Algorithms
+            </a>
+
+            <a
+                href="#routePlanner"
+                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
+            >
+                03 — Route Planner
+            </a>
+
+            <a
+                href="#algorithms"
+                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
+            >
+                04 — Analysis
+            </a>
+
+            <a
+                href="#analytics"
+                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
+            >
+                05 — Analytics
+            </a>
+
+            <a
+                href="#deserts"
+                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
+            >
+                06 — Ward Intelligence
+            </a>
+
         </div>
-    </header>
 
-    <!-- Main Fluid Layout -->
-    <main class="w-full px-8 md:px-16 py-12 space-y-12">
-        
-        <!-- Section 1: Algorithms & Configurations -->
-        <section id="algorithms" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div class="lg:col-span-7 bg-white border border-neutral-300 p-8 shadow-sm space-y-6 hover:shadow-md transition">
-                <div class="border-b border-neutral-200 pb-4 flex justify-between items-center">
-                    <div>
-                        <h2 class="editorial-title text-xl font-bold text-neutral-900">Algorithm Evaluations</h2>
-                        <p class="text-xs text-neutral-500 mt-1">Comparing how different route planners navigate Mumbai's transit layout.</p>
-                    </div>
-                    <span class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200">Live Backend Feed</span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    {% for result in algorithm_results %}
-                    <div class="bg-[#f4f4f0] p-4 border {% if result.algorithm in best_two %}border-neutral-900 ring-1 ring-neutral-900{% else %}border-neutral-200{% endif %} hover:border-neutral-400 transition">
-                        <div class="flex justify-between gap-3 items-start">
-                            <div>
-                                <strong class="text-neutral-900">{{ loop.index }}. {{ result.algorithm }}</strong>
-                                <span class="text-xs text-neutral-600 mt-1 block font-medium text-emerald-800">
-                                    {% if result.algorithm == 'A* Search' %}
-                                        Balanced distance & cost navigator
-                                    {% elif result.algorithm == 'Uniform Cost Search' %}
-                                        Cheapest cumulative fare planner
-                                    {% elif result.algorithm == 'Greedy Best First Search' %}
-                                        Direct destination-focused tracker
-                                    {% elif result.algorithm == 'BFS' %}
-                                        Step-by-step wide area checker
-                                    {% elif result.algorithm == 'DFS' %}
-                                        Single line corridor explorer
-                                    {% else %}
-                                        Standard routing strategy
-                                    {% endif %}
-                                </span>
-                            </div>
-                            {% if result.algorithm in best_two %}
-                            <span class="text-[10px] font-mono font-bold bg-neutral-900 text-white px-2 py-1">BEST 2</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-2 mt-4 text-[11px]">
-                            <div>
-                                <span class="text-neutral-500 block">Path Cost</span>
-                                <strong>{{ result.path_cost }}</strong>
-                            </div>
-                            <div>
-                                <span class="text-neutral-500 block">Stops Checked</span>
-                                <strong>{{ result.nodes }}</strong>
-                            </div>
-                            <div>
-                                <span class="text-neutral-500 block">Compute Time</span>
-                                <strong>{{ result.time }}s</strong>
-                            </div>
-                        </div>
-
-                        <div class="mt-3 pt-3 border-t border-neutral-200 flex justify-between text-xs">
-                            <span class="text-neutral-500">Overall Efficiency Score</span>
-                            <strong>{{ result.score }}</strong>
-                        </div>
-
-                        <!-- Enhanced Map Simulation Card with Explicit Start & Destination -->
-                        <div class="algo-mini" data-algo-card="{{ result.algorithm }}">
-                            <div class="bg-neutral-200/80 px-2.5 py-1.5 rounded mb-2 flex justify-between items-center text-[11px] font-mono">
-                                <span class="text-neutral-600 font-semibold">Route Path:</span>
-                                <span class="algo-mini-route font-bold text-emerald-800"></span>
-                            </div>
-                            
-                            <div class="algo-mini-head">
-                                <div>
-                                    <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-500">Route Simulation</span>
-                                    <p class="text-[11px] font-medium text-neutral-900 mt-0.5 algo-mini-short"></p>
-                                </div>
-                                <button type="button" class="algo-mini-toggle">View Map</button>
-                            </div>
-
-                            <div class="algo-mini-panel">
-                                <div class="border border-neutral-300 rounded overflow-hidden relative bg-neutral-100">
-                                    <div id="map-{{ loop.index }}" class="map-view-box"></div>
-                                </div>
-                                <p class="mini-caption text-[11px] text-neutral-700 mt-2 font-medium italic bg-white p-2 border border-neutral-200 rounded"></p>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-neutral-200">
-                                    <span class="mini-step font-mono text-[10px] text-neutral-900 font-semibold"></span>
-                                    <button type="button" class="mini-next bg-neutral-900 text-white px-3 py-1.5 font-mono text-[10px] uppercase cursor-pointer hover:bg-neutral-800 transition">Next Step →</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="lg:col-span-5 bg-neutral-900 text-[#f4f4f0] border border-neutral-800 p-8 shadow-sm flex flex-col justify-between">
-                <div>
-                    <div class="border-b border-neutral-800 pb-4 flex justify-between items-center">
-                        <div>
-                            <h2 class="editorial-title text-xl font-bold text-white">Selected Best Two Algorithms</h2>
-                            <p class="text-xs text-neutral-400 mt-1">Driving our final outcome.</p>
-                        </div>
-                        <span class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700">Active</span>
-                    </div>
-
-                    <div class="space-y-4 text-sm text-neutral-300 mt-5">
-                        {% for algorithm in best_two %}
-                        <div class="bg-neutral-800/80 p-4 border border-neutral-700">
-                            <span class="{% if loop.index == 1 %}text-emerald-400{% elif loop.index == 2 %}text-sky-400{% else %}text-sky-400{% endif %} font-bold block mb-1">#{{ loop.index }} {{ algorithm }}</span>
-                            <p class="text-xs text-neutral-400">
-                                {% if algorithm == 'A* Search' %}
-                                    Optimally balances short physical distance with intelligent lookahead routing to achieve reliable travel paths.
-                                {% elif algorithm == 'Uniform Cost Search' %}
-                                    Systematically maps the most economical ticket pricing paths across interconnected ward stops.
-                                {% else %}
-                                    Provides high reliability and exceptional balance across city transit links.
-                                {% endif %}
-                            </p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 2: Visual Charts -->
-        <section id="analytics" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
-                <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Accesibility Gap Score</h3>
-                    <span class="text-xs font-mono text-neutral-500">FINAL PRIORITY METRIC</span>
-                </div>
-                <div class="relative h-80 w-full">
-                    <canvas id="priorityChart"></canvas>
-                </div>
-            </div>
-
-            <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
-                <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                    <h3 class="editorial-title text-lg font-bold text-neutral-900">Transit Deserts (Distance to Stop)</h3>
-                    <span class="text-xs font-mono text-neutral-500">KILOMETERS</span>
-                </div>
-                <div class="relative h-80 w-full flex justify-center">
-                    <canvas id="transitDesertChart"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 3: Data Cards Lists with Real-time Filter & Export -->
-        <section id="deserts" class="space-y-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-neutral-300 p-6">
-                <div>
-                    <h2 class="editorial-title text-xl font-bold text-neutral-900">Ward Intelligence & Target Lists</h2>
-                    <p class="text-xs text-neutral-500 mt-0.5">Explore identified transit deserts and areas to be prioritized.</p>
-                </div>
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <input type="text" id="wardSearch" placeholder="Search ward or location..." class="bg-[#f4f4f0] border border-neutral-300 px-4 py-2 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 transition w-full sm:w-60">
-                    <button id="exportCsvBtn" class="bg-neutral-900 text-[#f4f4f0] font-mono text-xs uppercase px-3 py-2 hover:bg-neutral-800 transition">Export CSV</button>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Poor Access Wards -->
-                <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
-                    <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Identified Transit Deserts</h3>
-                        <span class="text-xs font-mono text-neutral-500">DISTANCE > 0.30 KM</span>
-                    </div>
-                    <div id="poorAccessList" class="space-y-3 max-h-80 overflow-y-auto pr-2">
-                        {% for item in poor_access %}
-                        <div class="ward-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer" data-name="{{ item.ward }} {{ item.name | lower }}" onclick="openWardModal('Ward {{ item.ward }}', '{{ item.name }}', '{{ item.distance }} km', 'Transit Desert')">
-                            <span class="font-medium text-neutral-900">Ward {{ item.ward }} <span class="text-neutral-500 font-normal">({{ item.name }})</span></span>
-                            <span class="font-mono font-bold text-amber-700 bg-amber-100/60 px-3 py-1 border border-amber-200">{{ item.distance }} km</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Recommended Expansion Zones -->
-                <div class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4">
-                    <div class="flex justify-between items-center border-b border-neutral-200 pb-3">
-                        <h3 class="editorial-title text-lg font-bold text-neutral-900">Areas that could be prioritized</h3>
-                        <span class="text-xs font-mono text-neutral-500">TOP 5 RANKED</span>
-                    </div>
-                    <div id="prioritizedList" class="space-y-3 max-h-80 overflow-y-auto pr-2">
-                        {% for item in prioritized %}
-                        <div class="priority-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer" data-name="{{ item.ward }} {{ item.name | lower }}" onclick="openWardModal('Ward {{ item.ward }}', '{{ item.name }}', 'Score: {{ item.score }}', 'Priority Expansion Zone')">
-                            <div>
-                                <span class="font-bold text-neutral-900 text-base">Ward {{ item.ward }} <span class="text-neutral-500 font-normal">({{ item.name }})</span></span>
-                                <span class="block text-xs text-neutral-600 mt-0.5">Distance: {{ item.distance }} km</span>
-                            </div>
-                            <span class="font-mono font-bold text-indigo-700 bg-indigo-100/60 px-3 py-1 border border-indigo-200 text-base">{{ item.score }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Modal Popup -->
-    <div id="wardModal" class="fixed inset-0 z-50 bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white border border-neutral-300 max-w-lg w-full p-8 shadow-2xl space-y-6 relative">
-            <button onclick="closeWardModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 font-mono text-sm">✕</button>
-            <div>
-                <span id="modalCategory" class="text-xs font-mono uppercase bg-neutral-100 text-neutral-600 px-2.5 py-1 border border-neutral-200"></span>
-                <h3 id="modalTitle" class="editorial-title text-2xl font-bold text-neutral-900 mt-2"></h3>
-            </div>
-            <div class="space-y-3 text-sm text-neutral-600 border-t border-b border-neutral-200 py-4">
-                <div class="flex justify-between">
-                    <span>Primary Metric:</span>
-                    <strong id="modalMetric" class="text-neutral-900 font-mono"></strong>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeWardModal()" class="bg-neutral-900 text-[#f4f4f0] text-xs font-mono uppercase px-4 py-2 hover:bg-neutral-800 transition">Close Details</button>
-            </div>
-        </div>
     </div>
 
-    <!-- Script Engine -->
-    <script>
-        const prioritizedData = {{ prioritized | tojson }};
-        const poorAccessData = {{ poor_access | tojson }};
+</nav>
 
-        // 1. Priority Chart
-        const ctxPriority = document.getElementById('priorityChart').getContext('2d');
-        new Chart(ctxPriority, {
+
+
+<!-- ========================================================== -->
+<!-- HERO / OVERVIEW                                             -->
+<!-- ========================================================== -->
+
+<header
+    id="overview"
+    class="w-full px-8 md:px-16 pt-16 pb-12 border-b border-neutral-300 scroll-mt-20"
+>
+
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8">
+
+        <div class="space-y-4 max-w-5xl">
+
+            <span
+                class="text-xs font-mono uppercase tracking-widest text-emerald-700 bg-emerald-100 px-3 py-1 border border-emerald-200"
+            >
+                System Active •
+            </span>
+
+            <h1
+                class="editorial-title text-4xl sm:text-6xl lg:text-7xl font-extrabold text-neutral-900 leading-[1.02]"
+            >
+                Mumbai Public Transport Accessibility Project
+            </h1>
+
+            <p
+                class="text-sm md:text-base text-neutral-600 max-w-3xl leading-relaxed"
+            >
+                An interactive dashboard that compares five
+                algorithms and lets users calculate routes between transport locations based on
+                a balanced route objective.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- KPI CARDS -->
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
+
+        <div
+            class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition"
+        >
+
+            <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Total Algorithms Analyzed
+            </span>
+
+            <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">
+                5
+            </p>
+
+            <span class="text-xs text-emerald-700 font-medium mt-1 block">
+                BFS • DFS • UCS • Greedy • A*
+            </span>
+
+        </div>
+
+
+        <div
+            class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition"
+        >
+
+            <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Best Algorithm
+            </span>
+
+            <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">
+
+                {% if best_two|length > 0 %}
+                    {{ best_two[0] }}
+                {% else %}
+                    Pending
+                {% endif %}
+
+            </p>
+
+            <span class="text-xs text-indigo-700 font-medium mt-1 block">
+                Based on network-wide analysis
+            </span>
+
+        </div>
+
+
+        <div
+            class="bg-white border border-neutral-300 p-6 shadow-sm hover:border-neutral-900 transition"
+        >
+
+            <span class="text-xs font-mono text-neutral-500 uppercase tracking-wider">
+                Second Best Algorithm
+            </span>
+
+            <p class="editorial-title text-3xl font-bold text-neutral-900 mt-2">
+
+                {% if best_two|length > 1 %}
+                    {{ best_two[1] }}
+                {% else %}
+                    Pending
+                {% endif %}
+
+            </p>
+
+            <span class="text-xs text-amber-700 font-medium mt-1 block">
+                Network-wide alternate
+            </span>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+
+<main class="w-full px-8 md:px-16 py-12 space-y-16">
+
+
+<!-- ========================================================== -->
+<!-- SECTION 01 — ALGORITHM LEARNING LAB                        -->
+<!-- ========================================================== -->
+
+<section
+    id="algorithmLab"
+    class="space-y-7 scroll-mt-24"
+>
+
+    <div class="section-divider">
+
+        <span class="section-number">
+            01
+        </span>
+
+        <div class="section-divider-line"></div>
+
+        <span class="section-label">
+            Algorithm Laboratory
+        </span>
+
+    </div>
+
+
+    <div
+        class="flex flex-col lg:flex-row justify-between gap-6 items-start lg:items-end"
+    >
+
+        <div class="max-w-4xl">
+
+            <span class="text-xs font-mono uppercase tracking-widest text-emerald-700">
+                Before You Plan
+            </span>
+
+            <h2 class="editorial-title text-3xl md:text-4xl font-bold mt-2">
+                How The 5 Algorithms Think
+            </h2>
+
+            <p class="text-sm text-neutral-600 mt-3 leading-relaxed">
+
+                Start here if graph algorithms are new to you. Each card uses a small illustrative
+                Mumbai journey so you can see the search process, not just read a definition.
+                The examples are teaching simulations; the route planner below uses your actual spatial graph.
+
+            </p>
+
+        </div>
+
+
+        <a
+            href="#routePlanner"
+            class="bg-neutral-900 text-white px-5 py-3 text-xs font-mono uppercase hover:bg-neutral-800 transition"
+        >
+            Try Your Own Route ↓
+        </a>
+
+    </div>
+
+
+
+    <!-- ALGORITHM CARDS -->
+
+    <div
+        class="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        id="learningAlgorithmGrid"
+    >
+
+
+        <!-- BFS -->
+
+        <article
+            class="learning-card p-5"
+            data-learning-algo="BFS"
+        >
+
+            <div class="flex justify-between gap-4">
+
+                <div>
+
+                    <span class="text-[10px] font-mono text-neutral-500">
+                        01 • UNINFORMED SEARCH
+                    </span>
+
+                    <h3 class="editorial-title text-xl font-bold mt-1">
+                        BFS — Breadth-First Search
+                    </h3>
+
+                </div>
+
+                <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 h-fit">
+                    LEVEL BY LEVEL
+                </span>
+
+            </div>
+
+
+            <p class="text-xs text-neutral-600 mt-3 leading-relaxed">
+
+                <strong>Simple idea:</strong>
+                check all nearby options first, then move one layer farther out.
+                Like ripples spreading through Mumbai.
+
+            </p>
+
+
+            <div class="mt-3 border border-neutral-200 rounded overflow-hidden">
+
+                <div
+                    id="learn-map-0"
+                    class="learning-map"
+                ></div>
+
+            </div>
+
+
+            <div class="learning-progress mt-3">
+
+                <div id="learn-progress-0"></div>
+
+            </div>
+
+
+            <div class="learning-step mt-3">
+
+                <span
+                    id="learn-step-0"
+                    class="text-[10px] font-mono text-neutral-500"
+                >
+                    Step 1
+                </span>
+
+                <p
+                    id="learn-caption-0"
+                    class="text-xs text-neutral-800 mt-1 leading-relaxed"
+                ></p>
+
+            </div>
+
+
+            <button
+                id="learn-next-0"
+                class="mt-3 w-full bg-neutral-900 text-white py-2.5 text-[10px] font-mono uppercase hover:bg-neutral-800"
+            >
+                Play Explanation →
+            </button>
+
+        </article>
+
+
+
+        <!-- DFS -->
+
+        <article
+            class="learning-card p-5"
+            data-learning-algo="DFS"
+        >
+
+            <div class="flex justify-between gap-4">
+
+                <div>
+
+                    <span class="text-[10px] font-mono text-neutral-500">
+                        02 • UNINFORMED SEARCH
+                    </span>
+
+                    <h3 class="editorial-title text-xl font-bold mt-1">
+                        DFS — Depth-First Search
+                    </h3>
+
+                </div>
+
+                <span class="text-xs bg-sky-100 text-sky-800 px-2 py-1 h-fit">
+                    GO DEEP
+                </span>
+
+            </div>
+
+
+            <p class="text-xs text-neutral-600 mt-3 leading-relaxed">
+
+                <strong>Simple idea:</strong>
+                pick one corridor and follow it deeply.
+                If it does not work, backtrack and try another.
+
+            </p>
+
+
+            <div class="mt-3 border border-neutral-200 rounded overflow-hidden">
+
+                <div
+                    id="learn-map-1"
+                    class="learning-map"
+                ></div>
+
+            </div>
+
+
+            <div class="learning-progress mt-3">
+
+                <div id="learn-progress-1"></div>
+
+            </div>
+
+
+            <div class="learning-step mt-3">
+
+                <span
+                    id="learn-step-1"
+                    class="text-[10px] font-mono text-neutral-500"
+                >
+                    Step 1
+                </span>
+
+                <p
+                    id="learn-caption-1"
+                    class="text-xs text-neutral-800 mt-1 leading-relaxed"
+                ></p>
+
+            </div>
+
+
+            <button
+                id="learn-next-1"
+                class="mt-3 w-full bg-neutral-900 text-white py-2.5 text-[10px] font-mono uppercase hover:bg-neutral-800"
+            >
+                Play Explanation →
+            </button>
+
+        </article>
+
+
+
+        <!-- UCS -->
+
+        <article
+            class="learning-card p-5"
+            data-learning-algo="Uniform Cost Search"
+        >
+
+            <div class="flex justify-between gap-4">
+
+                <div>
+
+                    <span class="text-[10px] font-mono text-neutral-500">
+                        03 • COST-BASED SEARCH
+                    </span>
+
+                    <h3 class="editorial-title text-xl font-bold mt-1">
+                        Uniform Cost Search
+                    </h3>
+
+                </div>
+
+                <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 h-fit">
+                    LOWEST COST
+                </span>
+
+            </div>
+
+
+            <p class="text-xs text-neutral-600 mt-3 leading-relaxed">
+
+                <strong>Simple idea:</strong>
+                always expand the route with the smallest total distance travelled so far.
+
+            </p>
+
+
+            <div class="mt-3 border border-neutral-200 rounded overflow-hidden">
+
+                <div
+                    id="learn-map-2"
+                    class="learning-map"
+                ></div>
+
+            </div>
+
+
+            <div class="learning-progress mt-3">
+
+                <div id="learn-progress-2"></div>
+
+            </div>
+
+
+            <div class="learning-step mt-3">
+
+                <span
+                    id="learn-step-2"
+                    class="text-[10px] font-mono text-neutral-500"
+                >
+                    Step 1
+                </span>
+
+                <p
+                    id="learn-caption-2"
+                    class="text-xs text-neutral-800 mt-1 leading-relaxed"
+                ></p>
+
+            </div>
+
+
+            <button
+                id="learn-next-2"
+                class="mt-3 w-full bg-neutral-900 text-white py-2.5 text-[10px] font-mono uppercase hover:bg-neutral-800"
+            >
+                Play Explanation →
+            </button>
+
+        </article>
+
+
+
+        <!-- GREEDY -->
+
+        <article
+            class="learning-card p-5"
+            data-learning-algo="Greedy Best First Search"
+        >
+
+            <div class="flex justify-between gap-4">
+
+                <div>
+
+                    <span class="text-[10px] font-mono text-neutral-500">
+                        04 • HEURISTIC SEARCH
+                    </span>
+
+                    <h3 class="editorial-title text-xl font-bold mt-1">
+                        Greedy Best-First Search
+                    </h3>
+
+                </div>
+
+                <span class="text-xs bg-violet-100 text-violet-800 px-2 py-1 h-fit">
+                    CHASE GOAL
+                </span>
+
+            </div>
+
+
+            <p class="text-xs text-neutral-600 mt-3 leading-relaxed">
+
+                <strong>Simple idea:</strong>
+                look at the destination and choose the option that appears closest to it right now.
+
+            </p>
+
+
+            <div class="mt-3 border border-neutral-200 rounded overflow-hidden">
+
+                <div
+                    id="learn-map-3"
+                    class="learning-map"
+                ></div>
+
+            </div>
+
+
+            <div class="learning-progress mt-3">
+
+                <div id="learn-progress-3"></div>
+
+            </div>
+
+
+            <div class="learning-step mt-3">
+
+                <span
+                    id="learn-step-3"
+                    class="text-[10px] font-mono text-neutral-500"
+                >
+                    Step 1
+                </span>
+
+                <p
+                    id="learn-caption-3"
+                    class="text-xs text-neutral-800 mt-1 leading-relaxed"
+                ></p>
+
+            </div>
+
+
+            <button
+                id="learn-next-3"
+                class="mt-3 w-full bg-neutral-900 text-white py-2.5 text-[10px] font-mono uppercase hover:bg-neutral-800"
+            >
+                Play Explanation →
+            </button>
+
+        </article>
+
+
+
+        <!-- A STAR -->
+
+        <article
+            class="learning-card p-5 lg:col-span-2"
+            data-learning-algo="A* Search"
+        >
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+                <div class="lg:col-span-4">
+
+                    <span class="text-[10px] font-mono text-neutral-500">
+                        05 • INFORMED SEARCH
+                    </span>
+
+                    <h3 class="editorial-title text-2xl font-bold mt-1">
+                        A* Search
+                    </h3>
+
+                    <p class="text-xs text-neutral-600 mt-3 leading-relaxed">
+
+                        <strong>Simple idea:</strong>
+                        combine what we have already travelled with an estimate of what remains.
+                        It balances cost-so-far and smart lookahead.
+
+                    </p>
+
+
+                    <div class="mt-4 bg-[#f4f4f0] border border-neutral-200 p-4">
+
+                        <p class="font-mono text-xs">
+                            f(n) = g(n) + h(n)
+                        </p>
+
+                        <p class="text-[10px] text-neutral-500 mt-2">
+
+                            g(n) = distance already travelled<br>
+                            h(n) = estimated distance to the destination
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="lg:col-span-8">
+
+                    <div class="border border-neutral-200 rounded overflow-hidden">
+
+                        <div
+                            id="learn-map-4"
+                            class="learning-map"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="learning-progress mt-3">
+
+                        <div id="learn-progress-4"></div>
+
+                    </div>
+
+
+                    <div class="learning-step mt-3">
+
+                        <span
+                            id="learn-step-4"
+                            class="text-[10px] font-mono text-neutral-500"
+                        >
+                            Step 1
+                        </span>
+
+                        <p
+                            id="learn-caption-4"
+                            class="text-xs text-neutral-800 mt-1 leading-relaxed"
+                        ></p>
+
+                    </div>
+
+
+                    <button
+                        id="learn-next-4"
+                        class="mt-3 w-full bg-neutral-900 text-white py-2.5 text-[10px] font-mono uppercase hover:bg-neutral-800"
+                    >
+                        Play Explanation →
+                    </button>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    </div>
+
+</section>
+
+
+
+<!-- ========================================================== -->
+<!-- SECTION 02 — ROUTE PLANNER                                 -->
+<!-- ========================================================== -->
+
+<section
+    id="routePlanner"
+    class="bg-neutral-900 text-white border border-neutral-800 p-8 shadow-sm scroll-mt-24"
+>
+
+    <div class="section-divider mb-6">
+
+        <span class="section-number text-neutral-600">
+            02
+        </span>
+
+        <div class="h-px bg-neutral-800 flex-1"></div>
+
+        <span class="section-label text-neutral-600">
+            Journey Planning
+        </span>
+
+    </div>
+
+
+    <div class="flex flex-col lg:flex-row justify-between gap-6">
+
+        <div>
+
+            <span class="text-xs font-mono uppercase tracking-widest text-emerald-400">
+                Interactive Route Planner
+            </span>
+
+            <h2 class="editorial-title text-2xl md:text-3xl font-bold mt-2">
+                Plan Your Journey
+            </h2>
+
+            <p class="text-sm text-neutral-400 mt-2 max-w-3xl leading-relaxed">
+
+                Choose where you are starting, where you want to go, and what matters most to you.
+                The system then compares all five algorithms and recommends the best match.
+
+            </p>
+
+        </div>
+
+
+        <div class="text-xs font-mono text-neutral-500 border border-neutral-800 px-4 py-3 h-fit">
+
+            {{ stations|length }} SEARCHABLE LOCATIONS
+
+        </div>
+
+    </div>
+
+
+
+    <!-- START / DESTINATION -->
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-7">
+
+
+        <!-- START -->
+
+        <div class="relative">
+
+            <label
+                for="startStation"
+                class="text-xs font-mono uppercase text-neutral-400"
+            >
+                1. Where are you starting?
+            </label>
+
+
+            <div
+                class="station-picker mt-2"
+                data-picker="start"
+            >
+
+                <div class="relative">
+
+                    <input
+                        id="startStation"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="🔍 Search station, bus stop or location..."
+                        class="station-search w-full bg-neutral-800 border border-neutral-700 text-white px-4 py-3.5 pr-12 text-sm focus:outline-none focus:border-emerald-500"
+                    >
+
+                    <button
+                        type="button"
+                        class="station-clear hidden absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                        aria-label="Clear"
+                    >
+                        ✕
+                    </button>
+
+                </div>
+
+
+                <div
+                    class="station-menu hidden absolute left-0 right-0 mt-2 z-40 bg-neutral-900 border border-neutral-700 shadow-2xl overflow-hidden"
+                >
+
+                    <div
+                        class="station-mode-tabs p-2 border-b border-neutral-800 flex flex-wrap gap-1.5"
+                    >
+
+                        <button
+                            type="button"
+                            data-mode="all"
+                            class="station-mode active"
+                        >
+                            All
+                        </button>
+
+                        <button
+                            type="button"
+                            data-mode="Local Train"
+                            class="station-mode"
+                        >
+                            🚆 Local
+                        </button>
+
+                        <button
+                            type="button"
+                            data-mode="Bus"
+                            class="station-mode"
+                        >
+                            🚌 Bus
+                        </button>
+                    </div>
+
+
+                    <div
+                        class="px-3 py-2 text-[10px] font-mono text-neutral-500 border-b border-neutral-800"
+                    >
+                        Type a few letters to find a location
+                    </div>
+
+
+                    <div class="station-results max-h-72 overflow-y-auto"></div>
+
+                </div>
+
+            </div>
+
+
+            <p class="text-[10px] text-neutral-500 mt-2">
+                Search by name, then choose a transport category to narrow the list.
+            </p>
+
+        </div>
+
+
+
+        <!-- DESTINATION -->
+
+        <div class="relative">
+
+            <label
+                for="destinationStation"
+                class="text-xs font-mono uppercase text-neutral-400"
+            >
+                2. Where do you want to go?
+            </label>
+
+
+            <div
+                class="station-picker mt-2"
+                data-picker="destination"
+            >
+
+                <div class="relative">
+
+                    <input
+                        id="destinationStation"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="🔍 Search station, bus stop or location..."
+                        class="station-search w-full bg-neutral-800 border border-neutral-700 text-white px-4 py-3.5 pr-12 text-sm focus:outline-none focus:border-emerald-500"
+                    >
+
+                    <button
+                        type="button"
+                        class="station-clear hidden absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                        aria-label="Clear"
+                    >
+                        ✕
+                    </button>
+
+                </div>
+
+
+                <div
+                    class="station-menu hidden absolute left-0 right-0 mt-2 z-40 bg-neutral-900 border border-neutral-700 shadow-2xl overflow-hidden"
+                >
+
+                    <div
+                        class="station-mode-tabs p-2 border-b border-neutral-800 flex flex-wrap gap-1.5"
+                    >
+
+                        <button
+                            type="button"
+                            data-mode="all"
+                            class="station-mode active"
+                        >
+                            All
+                        </button>
+
+                        <button
+                            type="button"
+                            data-mode="Local Train"
+                            class="station-mode"
+                        >
+                            🚆 Local
+                        </button>
+
+                        <button
+                            type="button"
+                            data-mode="Bus"
+                            class="station-mode"
+                        >
+                            🚌 Bus
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        class="px-3 py-2 text-[10px] font-mono text-neutral-500 border-b border-neutral-800"
+                    >
+                        Type a few letters to find a location
+                    </div>
+
+
+                    <div class="station-results max-h-72 overflow-y-auto"></div>
+
+                </div>
+
+            </div>
+
+
+            <p class="text-[10px] text-neutral-500 mt-2">
+                Search by name — no need to scroll through thousands of locations.
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- BUTTON -->
+
+    <div class="flex flex-wrap items-center gap-4 mt-7">
+
+        <button
+            id="findRouteBtn"
+            type="button"
+            class="bg-emerald-600 hover:bg-emerald-500 text-white px-7 py-3.5 text-xs font-mono uppercase transition"
+        >
+            Find My Best Route →
+        </button>
+
+        <span
+            id="routeStatus"
+            class="hidden text-xs font-mono text-emerald-400"
+        ></span>
+
+    </div>
+
+
+
+</section>
+
+
+
+<!-- ========================================================== -->
+<!-- SECTION 03 — USER ROUTE RESULTS                             -->
+<!-- ========================================================== -->
+
+<section
+    id="userRouteResults"
+    class="hidden space-y-8 scroll-mt-24"
+>
+
+    <div class="section-divider">
+
+        <span class="section-number">
+            03
+        </span>
+
+        <div class="section-divider-line"></div>
+
+        <span class="section-label">
+            Your Calculated Journey
+        </span>
+
+    </div>
+
+
+    <div class="bg-white border border-neutral-300 p-8 shadow-sm">
+
+        <div
+            class="flex flex-col lg:flex-row justify-between gap-6 border-b border-neutral-200 pb-5"
+        >
+
+            <div>
+
+                <span class="text-xs font-mono uppercase text-emerald-700">
+                    Your Journey
+                </span>
+
+                <h2
+                    id="routeTitle"
+                    class="editorial-title text-2xl md:text-3xl font-bold mt-2"
+                ></h2>
+
+                <p
+                    id="routeObjectiveText"
+                    class="text-xs text-neutral-500 mt-2"
+                ></p>
+
+
+                <div
+                    id="routeTypeBanner"
+                    class="route-type-banner mt-4 p-4 rounded"
+                >
+
+                    <div class="flex flex-wrap items-center gap-3">
+
+                        <span
+                            id="routeTypeBadge"
+                            class="mode-badge"
+                        ></span>
+
+                        <div>
+
+                            <p
+                                id="routeTypeLine"
+                                class="text-xs font-semibold text-neutral-900"
+                            ></p>
+
+                            <p
+                                id="routeTypeExplanation"
+                                class="text-[10px] text-neutral-500 mt-1"
+                            ></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 mt-7">
+
+
+            <!-- ROUTE MAP -->
+
+            <div class="xl:col-span-12">
+
+                <div class="border border-neutral-300 rounded overflow-hidden">
+
+                    <div
+                        id="userRouteMap"
+                        class="route-summary-map"
+                    ></div>
+
+                </div>
+
+
+                <!-- ROUTE METRICS -->
+
+                <div class="mt-4 grid grid-cols-3 gap-3">
+
+                    <div class="bg-[#f4f4f0] border border-neutral-200 p-4">
+
+                        <span class="text-[10px] text-neutral-500 block">
+                            Recommended Route
+                        </span>
+
+                        <strong
+                            id="recommendedRoute"
+                            class="text-sm block mt-1"
+                        ></strong>
+
+                        <span
+                            id="recommendedMode"
+                            class="text-[10px] text-emerald-700 font-semibold block mt-2"
+                        ></span>
+
+                    </div>
+
+
+                    <div class="bg-[#f4f4f0] border border-neutral-200 p-4">
+
+                        <span class="text-[10px] text-neutral-500 block">
+                            Distance
+                        </span>
+
+                        <strong
+                            id="recommendedDistance"
+                            class="text-sm block mt-1"
+                        ></strong>
+
+                    </div>
+
+
+                    <div class="bg-[#f4f4f0] border border-neutral-200 p-4">
+
+                        <span class="text-[10px] text-neutral-500 block">
+                            Stops
+                        </span>
+
+                        <strong
+                            id="recommendedStops"
+                            class="text-sm block mt-1"
+                        ></strong>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- JOURNEY -->
+
+                <div class="mt-4 bg-[#f4f4f0] border border-neutral-200 p-5">
+
+                    <div class="flex justify-between items-center gap-4">
+
+                        <span class="text-xs font-mono uppercase text-neutral-500">
+                            Recommended Journey
+                        </span>
+
+                        <span class="text-[10px] text-neutral-500">
+                            Simplified view
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="recommendedRouteMode"
+                        class="mt-4"
+                    ></div>
+
+
+                    <div
+                        id="recommendedRouteSteps"
+                        class="route-journey-list mt-4"
+                    ></div>
+
+
+                    <p class="text-[10px] text-neutral-500 mt-4">
+
+                        Each stop is shown in travel order from START to DESTINATION.
+                        Transport badges show the route type used.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ========================================================== -->
+<!-- SECTION 04 — NETWORK ALGORITHM ANALYSIS                    -->
+<!-- ========================================================== -->
+
+<section
+    id="algorithms"
+    class="grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24"
+>
+
+    <div class="section-divider lg:col-span-12">
+
+        <span class="section-number">
+            04
+        </span>
+
+        <div class="section-divider-line"></div>
+
+        <span class="section-label">
+            Network Algorithm Analysis
+        </span>
+
+    </div>
+
+
+
+    <!-- RESULTS -->
+
+    <div
+        class="lg:col-span-7 bg-white border border-neutral-300 p-8 shadow-sm space-y-6"
+    >
+
+        <div
+            class="border-b border-neutral-200 pb-4 flex justify-between items-center gap-4"
+        >
+
+            <div>
+
+                <h2 class="editorial-title text-xl font-bold text-neutral-900">
+                    Network-Wide Algorithm Evaluations
+                </h2>
+
+                <p class="text-xs text-neutral-500 mt-1">
+                    Baseline comparison across the ward-to-transit spatial graph.
+                </p>
+
+            </div>
+
+
+            <span
+                class="text-xs font-mono bg-neutral-100 text-neutral-600 px-3 py-1 border border-neutral-200"
+            >
+                Cached Backend Feed
+            </span>
+
+        </div>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+
+            {% for result in algorithm_results %}
+
+            <div
+                class="bg-[#f4f4f0] p-4 border
+                {% if result.algorithm in best_two %}
+                    border-neutral-900 ring-1 ring-neutral-900
+                {% else %}
+                    border-neutral-200
+                {% endif %}"
+            >
+
+                <div class="flex justify-between gap-3 items-start">
+
+                    <div>
+
+                        <strong class="text-neutral-900">
+                            {{ loop.index }}. {{ result.algorithm }}
+                        </strong>
+
+
+                        <span
+                            class="text-xs text-neutral-600 mt-1 block font-medium text-emerald-800"
+                        >
+
+                            {% if result.algorithm == 'A* Search' %}
+
+                                Distance-aware lookahead navigator
+
+                            {% elif result.algorithm == 'Uniform Cost Search' %}
+
+                                Lowest cumulative graph-distance search
+
+                            {% elif result.algorithm == 'Greedy Best First Search' %}
+
+                                Destination-focused heuristic search
+
+                            {% elif result.algorithm == 'BFS' %}
+
+                                Layer-by-layer graph exploration
+
+                            {% elif result.algorithm == 'DFS' %}
+
+                                Deep corridor exploration strategy
+
+                            {% else %}
+
+                                Standard graph routing strategy
+
+                            {% endif %}
+
+                        </span>
+
+                    </div>
+
+
+                    {% if result.algorithm in best_two %}
+
+                    <span
+                        class="text-[10px] font-mono font-bold bg-neutral-900 text-white px-2 py-1"
+                    >
+                        BEST 2
+                    </span>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="grid grid-cols-3 gap-2 mt-4 text-[11px]">
+
+                    <div>
+
+                        <span class="text-neutral-500 block">
+                            Path Cost
+                        </span>
+
+                        <strong>
+                            {{ result.path_cost }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="text-neutral-500 block">
+                            Nodes Checked
+                        </span>
+
+                        <strong>
+                            {{ result.nodes }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="text-neutral-500 block">
+                            Compute Time
+                        </span>
+
+                        <strong>
+                            {{ result.time }}s
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="mt-3 pt-3 border-t border-neutral-200 flex justify-between text-xs"
+                >
+
+                    <span class="text-neutral-500">
+                        Overall Efficiency Score
+                    </span>
+
+                    <strong>
+                        {{ result.score }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- BEST TWO -->
+
+    <div
+        class="lg:col-span-5 bg-neutral-900 text-[#f4f4f0] border border-neutral-800 p-8 shadow-sm flex flex-col justify-between"
+    >
+
+        <div>
+
+            <div
+                class="border-b border-neutral-800 pb-4 flex justify-between items-center"
+            >
+
+                <div>
+
+                    <h2 class="editorial-title text-xl font-bold text-white">
+                        Best Two
+                    </h2>
+
+                    <p class="text-xs text-neutral-400 mt-1">
+                        Used by the accessibility analysis below.
+                    </p>
+
+                </div>
+
+
+                <span
+                    class="text-xs font-mono bg-neutral-800 text-emerald-400 px-3 py-1 border border-neutral-700"
+                >
+                    Active
+                </span>
+
+            </div>
+
+
+            <div class="space-y-4 text-sm text-neutral-300 mt-5">
+
+                {% for algorithm in best_two %}
+
+                <div class="bg-neutral-800/80 p-4 border border-neutral-700">
+
+                    <span
+                        class="{% if loop.index == 1 %}text-emerald-400{% else %}text-sky-400{% endif %} font-bold block mb-1"
+                    >
+                        #{{ loop.index }} {{ algorithm }}
+                    </span>
+
+
+                    <p class="text-xs text-neutral-400">
+
+                        {% if algorithm == 'A* Search' %}
+
+                            Uses geographic lookahead together with accumulated path cost.
+
+                        {% elif algorithm == 'Uniform Cost Search' %}
+
+                            Expands the currently lowest-cost path first.
+
+                        {% elif algorithm == 'BFS' %}
+
+                            Explores the graph level by level.
+
+                        {% elif algorithm == 'DFS' %}
+
+                            Explores one branch deeply before backtracking.
+
+                        {% else %}
+
+                            Uses a heuristic estimate to prioritize promising nodes.
+
+                        {% endif %}
+
+                    </p>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ========================================================== -->
+<!-- SECTION 05 — SPATIAL ANALYTICS                             -->
+<!-- ========================================================== -->
+
+<section
+    id="analytics"
+    class="space-y-7 scroll-mt-24"
+>
+
+    <div class="section-divider">
+
+        <span class="section-number">
+            05
+        </span>
+
+        <div class="section-divider-line"></div>
+
+        <span class="section-label">
+            Spatial Analytics
+        </span>
+
+    </div>
+
+
+
+    <div>
+
+        <span class="text-xs font-mono uppercase tracking-widest text-emerald-700">
+            Data Intelligence
+        </span>
+
+        <h2 class="editorial-title text-3xl font-bold mt-2">
+            Mumbai Transit Accessibility Analytics
+        </h2>
+
+        <p class="text-sm text-neutral-600 mt-3 max-w-3xl leading-relaxed">
+
+            Visual summaries of the areas requiring the most attention,
+            based on transport accessibility and infrastructure priority.
+
+        </p>
+
+    </div>
+
+
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+
+        <!-- PRIORITY -->
+
+        <div
+            class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4"
+        >
+
+            <div
+                class="flex justify-between items-center border-b border-neutral-200 pb-3"
+            >
+
+                <h3 class="editorial-title text-lg font-bold text-neutral-900">
+                    Accessibility Gap Score
+                </h3>
+
+                <span class="text-xs font-mono text-neutral-500">
+                    FINAL PRIORITY METRIC
+                </span>
+
+            </div>
+
+
+            <div class="relative h-80 w-full">
+
+                <canvas id="priorityChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- DESERTS -->
+
+        <div
+            class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4"
+        >
+
+            <div
+                class="flex justify-between items-center border-b border-neutral-200 pb-3"
+            >
+
+                <h3 class="editorial-title text-lg font-bold text-neutral-900">
+                    Transit Deserts
+                </h3>
+
+                <span class="text-xs font-mono text-neutral-500">
+                    DISTANCE &gt; 0.30 KM
+                </span>
+
+            </div>
+
+
+            <div class="relative h-80 w-full flex justify-center">
+
+                <canvas id="transitDesertChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ========================================================== -->
+<!-- SECTION 06 — WARD INTELLIGENCE                              -->
+<!-- ========================================================== -->
+
+<section
+    id="deserts"
+    class="space-y-6 scroll-mt-24"
+>
+
+    <div class="section-divider">
+
+        <span class="section-number">
+            06
+        </span>
+
+        <div class="section-divider-line"></div>
+
+        <span class="section-label">
+            Ward Intelligence
+        </span>
+
+    </div>
+
+
+
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-neutral-300 p-6"
+    >
+
+        <div>
+
+            <span class="text-xs font-mono uppercase tracking-widest text-emerald-700">
+                Infrastructure Planning
+            </span>
+
+            <h2 class="editorial-title text-xl font-bold text-neutral-900 mt-1">
+                Ward Intelligence & Target Lists
+            </h2>
+
+            <p class="text-xs text-neutral-500 mt-1">
+                Explore identified transit deserts and recommended infrastructure expansion zones.
+            </p>
+
+        </div>
+
+
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+
+            <input
+                type="text"
+                id="wardSearch"
+                placeholder="Search ward or location..."
+                class="bg-[#f4f4f0] border border-neutral-300 px-4 py-2 text-xs text-neutral-900 focus:outline-none focus:border-neutral-900 transition w-full sm:w-60"
+            >
+
+
+            <button
+                id="exportCsvBtn"
+                class="bg-neutral-900 text-[#f4f4f0] font-mono text-xs uppercase px-3 py-2 hover:bg-neutral-800 transition"
+            >
+                Export CSV
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+
+        <!-- TRANSIT DESERTS -->
+
+        <div
+            class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4"
+        >
+
+            <div
+                class="flex justify-between items-center border-b border-neutral-200 pb-3"
+            >
+
+                <h3 class="editorial-title text-lg font-bold text-neutral-900">
+                    Identified Transit Deserts
+                </h3>
+
+                <span class="text-xs font-mono text-neutral-500">
+                    DISTANCE &gt; 0.30 KM
+                </span>
+
+            </div>
+
+
+            <div
+                id="poorAccessList"
+                class="space-y-3 max-h-80 overflow-y-auto pr-2 ward-scroll"
+            >
+
+                {% for item in poor_access %}
+
+                <div
+                    class="ward-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer"
+                    data-name="{{ item.ward }} {{ item.name|lower }}"
+                    data-ward="{{ item.ward }}"
+                    data-location="{{ item.name }}"
+                    data-metric="{{ item.distance }} km"
+                    data-category="Transit Desert"
+                >
+
+                    <span class="font-medium text-neutral-900">
+
+                        Ward {{ item.ward }}
+
+                        <span class="text-neutral-500 font-normal">
+                            ({{ item.name }})
+                        </span>
+
+                    </span>
+
+
+                    <span
+                        class="font-mono font-bold text-amber-700 bg-amber-100/60 px-3 py-1 border border-amber-200"
+                    >
+                        {{ item.distance }} km
+                    </span>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+
+        <!-- EXPANSION ZONES -->
+
+        <div
+            class="bg-white border border-neutral-300 p-8 shadow-sm space-y-4"
+        >
+
+            <div
+                class="flex justify-between items-center border-b border-neutral-200 pb-3"
+            >
+
+                <h3 class="editorial-title text-lg font-bold text-neutral-900">
+                    AREAS THAT COULD BE PRIORITIZED
+                </h3>
+
+                <span class="text-xs font-mono text-neutral-500">
+                    TOP 5
+                </span>
+
+            </div>
+
+
+            <div
+                id="prioritizedList"
+                class="space-y-3 max-h-80 overflow-y-auto pr-2 ward-scroll"
+            >
+
+                {% for item in prioritized %}
+
+                <div
+                    class="priority-item flex justify-between items-center bg-[#f4f4f0] p-4 border border-neutral-200 text-sm hover:border-neutral-400 transition cursor-pointer"
+                    data-name="{{ item.ward }} {{ item.name|lower }}"
+                    data-ward="{{ item.ward }}"
+                    data-location="{{ item.name }}"
+                    data-metric="Score: {{ item.score }}"
+                    data-category="Priority Expansion Zone"
+                >
+
+                    <div>
+
+                        <span class="font-bold text-neutral-900 text-base">
+
+                            Ward {{ item.ward }}
+
+                            <span class="text-neutral-500 font-normal">
+                                ({{ item.name }})
+                            </span>
+
+                        </span>
+
+
+                        <span class="block text-xs text-neutral-600 mt-0.5">
+                            Distance: {{ item.distance }} km
+                        </span>
+
+                    </div>
+
+
+                    <span
+                        class="font-mono font-bold text-indigo-700 bg-indigo-100/60 px-3 py-1 border border-indigo-200 text-base"
+                    >
+                        {{ item.score }}
+                    </span>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+</main>
+
+
+
+<!-- ========================================================== -->
+<!-- WARD DETAILS MODAL                                         -->
+<!-- ========================================================== -->
+
+<div
+    id="wardModal"
+    class="fixed inset-0 z-[60] bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4"
+>
+
+    <div
+        class="bg-white border border-neutral-300 max-w-lg w-full p-8 shadow-2xl space-y-6 relative"
+    >
+
+        <button
+            id="closeModalBtn"
+            class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 font-mono text-sm"
+        >
+            ✕
+        </button>
+
+
+        <div>
+
+            <span
+                id="modalCategory"
+                class="text-xs font-mono uppercase bg-neutral-100 text-neutral-600 px-2.5 py-1 border border-neutral-200"
+            ></span>
+
+
+            <h3
+                id="modalTitle"
+                class="editorial-title text-2xl font-bold text-neutral-900 mt-2"
+            ></h3>
+
+        </div>
+
+
+        <div
+            class="space-y-3 text-sm text-neutral-600 border-t border-b border-neutral-200 py-4"
+        >
+
+            <div class="flex justify-between">
+
+                <span>
+                    Primary Metric:
+                </span>
+
+                <strong
+                    id="modalMetric"
+                    class="text-neutral-900 font-mono"
+                ></strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="flex justify-end">
+
+            <button
+                id="closeModalBtn2"
+                class="bg-neutral-900 text-[#f4f4f0] text-xs font-mono uppercase px-4 py-2 hover:bg-neutral-800 transition"
+            >
+                Close Details
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================================================== -->
+<!-- JAVASCRIPT                                                  -->
+<!-- ========================================================== -->
+
+<script id="flaskData" type="application/json">
+{{ {"prioritized": prioritized, "poor_access": poor_access} | tojson }}
+</script>
+
+<script id="stationGroupsData" type="application/json">
+{{ station_groups | tojson }}
+</script>
+
+<script>
+
+
+/* ==========================================================
+   DATA FROM FLASK
+   ========================================================== */
+
+const flaskData =
+    JSON.parse(document.getElementById('flaskData').textContent);
+const prioritizedData = flaskData.prioritized;
+const poorAccessData = flaskData.poor_access;
+
+
+
+/* ==========================================================
+   0. NAVIGATION
+   ========================================================== */
+
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileMenu = document.getElementById('mobileMenu');
+
+if (mobileMenuBtn && mobileMenu) {
+
+    mobileMenuBtn.addEventListener('click', () => {
+
+        mobileMenu.classList.toggle('hidden');
+
+    });
+
+}
+
+
+/* Close mobile menu */
+
+document.querySelectorAll('.mobile-nav-link').forEach(link => {
+
+    link.addEventListener('click', () => {
+
+        mobileMenu.classList.add('hidden');
+
+    });
+
+});
+
+
+/* Active desktop navigation */
+
+const navLinks = document.querySelectorAll('.nav-link');
+
+const navSections = [
+    document.getElementById('overview'),
+    document.getElementById('algorithmLab'),
+    document.getElementById('routePlanner'),
+    document.getElementById('userRouteResults'),
+    document.getElementById('algorithms'),
+    document.getElementById('analytics'),
+    document.getElementById('deserts')
+].filter(Boolean);
+
+
+/*
+    We deliberately keep the route-results section out of the
+    navbar highlighting logic. It appears dynamically after
+    the user searches, but still belongs to the Route Planner.
+*/
+
+const navigationSections = [
+    document.getElementById('overview'),
+    document.getElementById('algorithmLab'),
+    document.getElementById('routePlanner'),
+    document.getElementById('algorithms'),
+    document.getElementById('analytics'),
+    document.getElementById('deserts')
+].filter(Boolean);
+
+
+const navObserver = new IntersectionObserver(
+    entries => {
+
+        entries.forEach(entry => {
+
+            if (!entry.isIntersecting) {
+                return;
+            }
+
+
+            navLinks.forEach(link => {
+
+                link.classList.remove('active');
+
+            });
+
+
+            const activeLink = document.querySelector(
+                `.nav-link[data-section="${entry.target.id}"]`
+            );
+
+
+            if (activeLink) {
+
+                activeLink.classList.add('active');
+
+            }
+
+        });
+
+    },
+    {
+        rootMargin: '-25% 0px -65% 0px',
+        threshold: 0
+    }
+);
+
+
+navigationSections.forEach(section => {
+
+    navObserver.observe(section);
+
+});
+
+
+
+/* ==========================================================
+   1. ALGORITHM LEARNING LAB
+   ========================================================== */
+
+const learningLocations = {
+
+    'CSMT': [18.9402, 72.8356],
+    'Dadar': [19.0178, 72.8478],
+    'Bandra': [19.0596, 72.8295],
+    'Kurla': [19.0650, 72.8790],
+    'Ghatkopar': [19.0860, 72.9081],
+    'Andheri': [19.1136, 72.8697],
+    'Vashi': [19.0771, 72.9980],
+    'Nerul': [19.0330, 73.0170],
+    'Seawood': [19.0203, 73.0190],
+    'Thane': [19.1860, 72.9758]
+
+};
+
+
+const learningExamples = [
+
+    {
+        algo: 'BFS',
+
+        steps: [
+            ['CSMT'],
+            ['CSMT','Dadar','Kurla'],
+            ['CSMT','Dadar','Kurla','Ghatkopar'],
+            ['CSMT','Dadar','Kurla','Ghatkopar','Thane']
+        ],
+
+        captions: [
+            'Start at CSMT. BFS puts the starting point into its queue.',
+            'BFS checks the first layer of nearby places before going farther.',
+            'The search expands another layer. It does not jump deep down one corridor.',
+            'The destination is reached after expanding outward layer by layer.'
+        ]
+
+    },
+
+
+    {
+        algo: 'DFS',
+
+        steps: [
+            ['CSMT'],
+            ['CSMT','Dadar'],
+            ['CSMT','Dadar','Bandra'],
+            ['CSMT','Dadar','Bandra','Andheri'],
+            ['CSMT','Dadar','Bandra','Andheri','Ghatkopar'],
+            ['CSMT','Dadar','Bandra','Andheri','Ghatkopar','Thane']
+        ],
+
+        captions: [
+            'Start at CSMT and choose one available connection.',
+            'DFS keeps going deeper instead of checking every nearby option.',
+            'It continues down the chosen corridor toward Bandra.',
+            'It is still following one branch deeply.',
+            'After exploring the deep branch, the search reaches another connection.',
+            'The destination is finally reached. DFS can be quick to find a path, but it does not guarantee the shortest one.'
+        ]
+
+    },
+
+
+    {
+        algo: 'Uniform Cost Search',
+
+        steps: [
+            ['CSMT'],
+            ['CSMT','Dadar'],
+            ['CSMT','Dadar','Kurla'],
+            ['CSMT','Dadar','Kurla','Ghatkopar'],
+            ['CSMT','Dadar','Kurla','Ghatkopar','Thane']
+        ],
+
+        captions: [
+            'Start at CSMT with a total cost of 0.',
+            'UCS compares the available routes and expands the one with the smallest total distance so far.',
+            'A route that has travelled less is preferred, even if another option looks closer to the destination.',
+            'The search keeps the cheapest accumulated route at the front of its priority queue.',
+            'The destination is selected when it is the lowest-cost option remaining.'
+        ]
+
+    },
+
+
+    {
+        algo: 'Greedy Best First Search',
+
+        steps: [
+            ['CSMT'],
+            ['CSMT','Kurla'],
+            ['CSMT','Kurla','Ghatkopar'],
+            ['CSMT','Kurla','Ghatkopar','Thane']
+        ],
+
+        captions: [
+            'Start at CSMT and look toward the destination.',
+            'Greedy chooses the place that appears closest to Thane right now.',
+            'It keeps chasing the destination using only the estimated remaining distance.',
+            'Thane is reached. Greedy can be very direct, but its locally best choice is not always globally best.'
+        ]
+
+    },
+
+
+    {
+        algo: 'A* Search',
+
+        steps: [
+            ['CSMT'],
+            ['CSMT','Dadar'],
+            ['CSMT','Dadar','Kurla'],
+            ['CSMT','Dadar','Kurla','Ghatkopar'],
+            ['CSMT','Dadar','Kurla','Ghatkopar','Thane']
+        ],
+
+        captions: [
+            'Start at CSMT. A* calculates f(n) = g(n) + h(n).',
+            'A* considers both distance already travelled and estimated distance remaining.',
+            'It compares promising choices instead of blindly exploring every nearby point.',
+            'The best combined score keeps the search focused toward Thane.',
+            'The destination is reached using a balance of cost-so-far and lookahead.'
+        ]
+
+    }
+
+];
+
+
+const learningStates = {};
+
+
+function initLearningMap(example, index) {
+
+    const map = L.map(
+        `learn-map-${index}`,
+        {
+            zoomControl: true,
+            attributionControl: false,
+            scrollWheelZoom: false
+        }
+    ).setView(
+        [19.0760, 72.8777],
+        11
+    );
+
+
+    L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png',
+        {
+            maxZoom: 18
+        }
+    ).addTo(map);
+
+
+    learningStates[index] = {
+        map,
+        example,
+        step: 0,
+        line: null,
+        markers: []
+    };
+
+
+    renderLearningStep(index);
+
+}
+
+
+function renderLearningStep(index) {
+
+    const state = learningStates[index];
+
+    if (!state) {
+        return;
+    }
+
+
+    const {
+        map,
+        example,
+        step
+    } = state;
+
+
+    if (state.line) {
+
+        map.removeLayer(state.line);
+
+    }
+
+
+    state.markers.forEach(marker => {
+
+        map.removeLayer(marker);
+
+    });
+
+
+    state.markers = [];
+
+
+    const names = example.steps[step];
+
+    const coords = names.map(
+        name => learningLocations[name]
+    );
+
+
+    state.line = L.polyline(
+        coords,
+        {
+            color: '#059669',
+            weight: 6,
+            opacity: .9,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }
+    ).addTo(map);
+
+
+    names.forEach((name, i) => {
+
+        const isStart = i === 0;
+
+        const isCurrent =
+            i === names.length - 1;
+
+        const isGoal =
+            name === 'Thane';
+
+
+        const marker = L.circleMarker(
+            learningLocations[name],
+            {
+                radius:
+                    isCurrent || isStart
+                        ? 8
+                        : 6,
+
+                fillColor:
+                    isGoal
+                        ? '#dc2626'
+                        : (
+                            isCurrent
+                                ? '#059669'
+                                : '#fff'
+                        ),
+
+                color:
+                    isGoal
+                        ? '#991b1b'
+                        : '#171717',
+
+                weight: 2,
+                fillOpacity: 1
+            }
+        ).addTo(map);
+
+
+        marker.bindTooltip(
+            name,
+            {
+                permanent:
+                    isCurrent ||
+                    isStart ||
+                    isGoal,
+
+                direction: 'top',
+                offset: [0,-6]
+            }
+        );
+
+
+        state.markers.push(marker);
+
+    });
+
+
+    if (coords.length > 1) {
+
+        map.fitBounds(
+            state.line.getBounds(),
+            {
+                padding: [35,35]
+            }
+        );
+
+    }
+
+
+    document.getElementById(
+        `learn-step-${index}`
+    ).textContent =
+        `Step ${step + 1} of ${example.steps.length}`;
+
+
+    document.getElementById(
+        `learn-caption-${index}`
+    ).textContent =
+        example.captions[step];
+
+
+    document.getElementById(
+        `learn-progress-${index}`
+    ).style.width =
+        `${((step + 1) / example.steps.length) * 100}%`;
+
+
+    document.getElementById(
+        `learn-next-${index}`
+    ).textContent =
+        step >= example.steps.length - 1
+            ? 'Restart Explanation ↻'
+            : 'Next Step →';
+
+}
+
+
+learningExamples.forEach(
+    (example, index) => {
+
+        initLearningMap(
+            example,
+            index
+        );
+
+
+        document
+            .getElementById(`learn-next-${index}`)
+            .addEventListener(
+                'click',
+                () => {
+
+                    const state =
+                        learningStates[index];
+
+
+                    state.step =
+                        state.step >= example.steps.length - 1
+                            ? 0
+                            : state.step + 1;
+
+
+                    renderLearningStep(index);
+
+                }
+            );
+
+    }
+);
+
+
+
+/* ==========================================================
+   2. STATIC DASHBOARD CHARTS
+   ========================================================== */
+
+const priorityCanvas =
+    document.getElementById('priorityChart');
+
+
+if (priorityCanvas) {
+
+    new Chart(
+        priorityCanvas.getContext('2d'),
+        {
+
             type: 'bar',
-            data: {
-                labels: prioritizedData.map(item => `Ward ${item.ward} (${item.name})`),
-                datasets: [{
-                    label: 'Final Priority Score',
-                    data: prioritizedData.map(item => item.score),
-                    backgroundColor: [
-                        'rgba(79, 70, 229, 0.85)',
-                        'rgba(16, 185, 129, 0.85)',
-                        'rgba(245, 158, 11, 0.85)',
-                        'rgba(239, 68, 68, 0.85)',
-                        'rgba(168, 85, 247, 0.85)'
-                    ],
-                    borderColor: [
-                        'rgb(79, 70, 229)',
-                        'rgb(16, 185, 129)',
-                        'rgb(245, 158, 11)',
-                        'rgb(239, 68, 68)',
-                        'rgb(168, 85, 247)'
-                    ],
-                    borderWidth: 2,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { color: '#525252', font: { size: 11, family: 'Plus Jakarta Sans' } }, grid: { display: false } },
-                    y: { ticks: { color: '#525252', font: { family: 'Plus Jakarta Sans' } }, grid: { color: 'rgba(229, 231, 235, 1)' } }
-                }
-            }
-        });
 
-        // 2. Transit Deserts Doughnut Chart
-        const topPoor = poorAccessData.slice(0, 6);
-        const ctxDesert = document.getElementById('transitDesertChart').getContext('2d');
-        new Chart(ctxDesert, {
-            type: 'doughnut',
             data: {
-                labels: topPoor.map(item => `Ward ${item.ward} (${item.name})`),
-                datasets: [{
-                    data: topPoor.map(item => item.distance),
-                    backgroundColor: [
-                        'rgba(245, 158, 11, 0.85)',
-                        'rgba(239, 68, 68, 0.85)',
-                        'rgba(59, 130, 246, 0.85)',
-                        'rgba(16, 185, 129, 0.85)',
-                        'rgba(168, 85, 247, 0.85)',
-                        'rgba(236, 72, 153, 0.85)'
-                    ],
-                    borderColor: '#ffffff',
-                    borderWidth: 3
-                }]
+
+                labels:
+                    prioritizedData.map(
+                        item =>
+                            `Ward ${item.ward} (${item.name})`
+                    ),
+
+                datasets: [
+
+                    {
+
+                        label: 'Final Priority Score',
+
+                        data:
+                            prioritizedData.map(
+                                item => item.score
+                            ),
+
+                        backgroundColor: [
+                            'rgba(79, 70, 229, 0.85)',
+                            'rgba(16, 185, 129, 0.85)',
+                            'rgba(245, 158, 11, 0.85)',
+                            'rgba(239, 68, 68, 0.85)',
+                            'rgba(168, 85, 247, 0.85)'
+                        ],
+
+                        borderWidth: 1,
+
+                        borderRadius: 4
+
+                    }
+
+                ]
+
             },
+
             options: {
+
                 responsive: true,
+
                 maintainAspectRatio: false,
+
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#404040', font: { size: 11, family: 'Plus Jakarta Sans' }, boxWidth: 14 } }
+                    legend: {
+                        display: false
+                    }
+                },
+
+                scales: {
+
+                    x: {
+
+                        ticks: {
+
+                            color: '#525252',
+
+                            font: {
+                                size: 11,
+                                family: 'Plus Jakarta Sans'
+                            }
+
+                        },
+
+                        grid: {
+                            display: false
+                        }
+
+                    },
+
+                    y: {
+
+                        ticks: {
+
+                            color: '#525252',
+
+                            font: {
+                                family: 'Plus Jakarta Sans'
+                            }
+
+                        },
+
+                        grid: {
+                            color: 'rgba(229, 231, 235, 1)'
+                        }
+
+                    }
+
                 }
+
             }
-        });
 
-        // Map Simulation Engine with Explicit Start/End Stations & Non-Technical Language
-        const mumbaiLocations = {
-            "CSMT": [18.9402, 72.8356],
-            "Dadar": [19.0178, 72.8478],
-            "Kurla": [19.0650, 72.8790],
-            "Bandra": [19.0596, 72.8295],
-            "Andheri": [19.1136, 72.8697],
-            "Thane": [19.1860, 72.9758]
-        };
+        }
+    );
 
-        const algorithmMapSimulations = {
-            "Uniform Cost Search": {
-                routeDisplay: "CSMT → Thane",
-                short: "Focuses on lowest ticket fares step-by-step to justify its steady efficiency score.",
-                steps: [
-                    { from: "CSMT", to: "Dadar", desc: "Starting at CSMT, heading toward Dadar by picking the most economical ticket link." },
-                    { from: "Dadar", to: "Kurla", desc: "Continuing through Kurla along the cheapest available connection." },
-                    { from: "Kurla", to: "Thane", desc: "Reaching Thane while keeping total travel expenses low, justifying its reliable score." }
+}
+
+
+
+const desertCanvas =
+    document.getElementById('transitDesertChart');
+
+
+if (desertCanvas) {
+
+    const topPoor =
+        poorAccessData.slice(0, 6);
+
+
+    new Chart(
+        desertCanvas.getContext('2d'),
+        {
+
+            type: 'doughnut',
+
+            data: {
+
+                labels:
+                    topPoor.map(
+                        item =>
+                            `Ward ${item.ward} (${item.name})`
+                    ),
+
+                datasets: [
+
+                    {
+
+                        data:
+                            topPoor.map(
+                                item => item.distance
+                            ),
+
+                        backgroundColor: [
+                            'rgba(245, 158, 11, 0.85)',
+                            'rgba(239, 68, 68, 0.85)',
+                            'rgba(59, 130, 246, 0.85)',
+                            'rgba(16, 185, 129, 0.85)',
+                            'rgba(168, 85, 247, 0.85)',
+                            'rgba(236, 72, 153, 0.85)'
+                        ],
+
+                        borderColor: '#ffffff',
+
+                        borderWidth: 3
+
+                    }
+
                 ]
+
             },
-            "BFS": {
-                routeDisplay: "CSMT → Thane",
-                short: "Checks all neighboring stations evenly in rings, explaining its thorough stop count.",
-                steps: [
-                    { from: "CSMT", to: "Dadar", desc: "Checking the first ring of nearby stations, landing directly on Dadar." },
-                    { from: "Dadar", to: "Kurla", desc: "Expanding outward to test all parallel connecting routes toward Kurla." },
-                    { from: "Kurla", to: "Thane", desc: "Reaching Thane after checking multiple equal-distance paths, resulting in a balanced score." }
-                ]
-            },
-            "Greedy Best First Search": {
-                routeDisplay: "CSMT → Thane",
-                short: "Takes direct jumps toward the destination, resulting in a fast short path.",
-                steps: [
-                    { from: "CSMT", to: "Kurla", desc: "Skipping minor stops to jump straight toward the central hub at Kurla." },
-                    { from: "Kurla", to: "Thane", desc: "Making a direct dash straight to Thane, yielding a high score due to minimal stops checked." }
-                ]
-            },
-            "A* Search": {
-                routeDisplay: "CSMT → Thane",
-                short: "Blends short physical distance with smart lookahead to achieve precise routing.",
-                steps: [
-                    { from: "CSMT", to: "Dadar", desc: "Beginning at CSMT and testing the most promising direct line north to Dadar." },
-                    { from: "Dadar", to: "Andheri", desc: "Steering through western mid-points to keep the overall route efficient." },
-                    { from: "Andheri", to: "Thane", desc: "Arriving at Thane with high precision, balancing distance and time for a solid score." }
-                ]
-            },
-            "DFS": {
-                routeDisplay: "CSMT → Andheri",
-                short: "Explores a single railway line deeply before turning back, yielding a longer path.",
-                steps: [
-                    { from: "CSMT", to: "Dadar", desc: "Heading out from CSMT down the primary southern line to Dadar." },
-                    { from: "Dadar", to: "Bandra", desc: "Venturing deep along the western commuter corridor toward Bandra." },
-                    { from: "Bandra", to: "Andheri", desc: "Reaching the deep branch endpoint at Andheri, resulting in a wider path exploration." }
-                ]
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+
+                        position: 'bottom',
+
+                        labels: {
+
+                            color: '#404040',
+
+                            font: {
+                                size: 11,
+                                family: 'Plus Jakarta Sans'
+                            },
+
+                            boxWidth: 14
+
+                        }
+
+                    }
+
+                }
+
             }
-        };
 
-        document.querySelectorAll(".algo-mini").forEach((card, index) => {
-            const algorithm = card.dataset.algoCard;
-            const sim = algorithmMapSimulations[algorithm];
-            if (!sim) return;
+        }
+    );
 
-            const routeBadge = card.querySelector(".algo-mini-route");
-            const toggle = card.querySelector(".algo-mini-toggle");
-            const panel = card.querySelector(".algo-mini-panel");
-            const caption = card.querySelector(".mini-caption");
-            const stepText = card.querySelector(".mini-step");
-            const next = card.querySelector(".mini-next");
-            const short = card.querySelector(".algo-mini-short");
+}
 
-            routeBadge.textContent = sim.routeDisplay;
-            short.textContent = sim.short;
 
-            let currentStep = 0;
-            let mapInstance = null;
-            let currentPolyline = null;
-            let startMarker = null;
-            let endMarker = null;
 
-            function initMap() {
-                if (mapInstance) return;
-                mapInstance = L.map(`map-${index + 1}`, {
-                    zoomControl: false,
-                    attributionControl: false,
-                    dragging: false,
+/* ==========================================================
+   3. USER ROUTE PLANNER
+   ========================================================== */
+
+let userRouteMap = null;
+
+let routeLayer = null;
+
+let routeMarkers = [];
+
+
+
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replaceAll('&', '&amp;')
+
+        .replaceAll('<', '&lt;')
+
+        .replaceAll('>', '&gt;')
+
+        .replaceAll('"', '&quot;')
+
+        .replaceAll("'", '&#039;');
+
+}
+
+
+
+function clearUserMap() {
+
+    if (!userRouteMap) {
+        return;
+    }
+
+
+    if (routeLayer) {
+
+        userRouteMap.removeLayer(
+            routeLayer
+        );
+
+        routeLayer = null;
+
+    }
+
+
+    routeMarkers.forEach(
+        marker =>
+            userRouteMap.removeLayer(marker)
+    );
+
+
+    routeMarkers = [];
+
+}
+
+
+
+function drawUserRoute(result) {
+
+    const mapElement =
+        document.getElementById('userRouteMap');
+
+
+    if (!userRouteMap) {
+
+        userRouteMap =
+            L.map(
+                mapElement,
+                {
+                    zoomControl: true,
+                    attributionControl: true,
                     scrollWheelZoom: false
-                }).setView([19.0760, 72.8777], 11);
-
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png', {
-                    maxZoom: 18
-                }).addTo(mapInstance);
-
-                renderMapStep();
-            }
-
-            function renderMapStep() {
-                if (!mapInstance) return;
-                const stepData = sim.steps[currentStep];
-                
-                if (currentPolyline) mapInstance.removeLayer(currentPolyline);
-                if (startMarker) mapInstance.removeLayer(startMarker);
-                if (endMarker) mapInstance.removeLayer(endMarker);
-
-                const startCoords = mumbaiLocations[stepData.from];
-                const endCoords = mumbaiLocations[stepData.to];
-
-                currentPolyline = L.polyline([startCoords, endCoords], {
-                    color: '#059669',
-                    weight: 5,
-                    opacity: 0.85,
-                    lineCap: 'round'
-                }).addTo(mapInstance);
-
-                startMarker = L.circleMarker(startCoords, { 
-                    radius: 7, 
-                    fillColor: '#171717', 
-                    color: '#ffffff', 
-                    weight: 2, 
-                    fillOpacity: 1 
-                }).addTo(mapInstance).bindTooltip(stepData.from, {permanent: true, direction: 'top'});
-
-                endMarker = L.circleMarker(endCoords, { 
-                    radius: 7, 
-                    fillColor: '#059669', 
-                    color: '#ffffff', 
-                    weight: 2, 
-                    fillOpacity: 1 
-                }).addTo(mapInstance).bindTooltip(stepData.to, {permanent: true, direction: 'top'});
-
-                mapInstance.fitBounds(currentPolyline.getBounds(), { padding: [35, 35] });
-
-                caption.innerHTML = `<strong>Leg ${currentStep + 1}:</strong> ${stepData.desc}`;
-                stepText.textContent = `Step ${currentStep + 1} of ${sim.steps.length}`;
-                next.textContent = currentStep >= sim.steps.length - 1 ? "Restart Route" : "Next Step →";
-            }
-
-            toggle.addEventListener("click", () => {
-                const isOpen = panel.classList.toggle("open");
-                toggle.textContent = isOpen ? "Hide Map" : "View Map";
-                if (isOpen) {
-                    setTimeout(() => {
-                        initMap();
-                        mapInstance.invalidateSize();
-                    }, 100);
                 }
-            });
+            ).setView(
+                [19.0760, 72.8777],
+                11
+            );
 
-            next.addEventListener("click", () => {
-                currentStep = currentStep >= sim.steps.length - 1 ? 0 : currentStep + 1;
-                renderMapStep();
-            });
-        });
 
-        // Search Filter
-        const searchInput = document.getElementById('wardSearch');
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            document.querySelectorAll('.ward-item').forEach(el => {
-                el.style.display = el.getAttribute('data-name').includes(query) ? 'flex' : 'none';
-            });
-            document.querySelectorAll('.priority-item').forEach(el => {
-                el.style.display = el.getAttribute('data-name').includes(query) ? 'flex' : 'none';
-            });
-        });
+        L.tileLayer(
+            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png',
+            {
+                maxZoom: 19,
+                attribution:
+                    '&copy; OpenStreetMap contributors &copy; CARTO'
+            }
+        ).addTo(userRouteMap);
 
-        // Modal Handlers
-        function openWardModal(wardNum, wardName, metric, category) {
-            document.getElementById('modalCategory').textContent = category;
-            document.getElementById('modalTitle').textContent = `${wardNum} (${wardName})`;
-            document.getElementById('modalMetric').textContent = metric;
-            document.getElementById('wardModal').classList.remove('hidden');
+    }
+
+
+    clearUserMap();
+
+
+    const points =
+        result.path_points || [];
+
+
+    if (!points.length) {
+        return;
+    }
+
+
+    const latLngs =
+        points.map(
+            point => [
+                point.lat,
+                point.lon
+            ]
+        );
+
+
+    routeLayer =
+        L.polyline(
+            latLngs,
+            {
+                color: '#059669',
+                weight: 6,
+                opacity: 0.9,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }
+        ).addTo(userRouteMap);
+
+
+    const important = [
+        points[0]
+    ];
+
+
+    if (points.length > 2) {
+
+        const middleCount =
+            Math.min(
+                4,
+                points.length - 2
+            );
+
+
+        for (
+            let i = 1;
+            i <= middleCount;
+            i++
+        ) {
+
+            important.push(
+                points[
+                    Math.round(
+                        i *
+                        (points.length - 1) /
+                        (middleCount + 1)
+                    )
+                ]
+            );
+
         }
 
-        function closeWardModal() {
-            document.getElementById('wardModal').classList.add('hidden');
+    }
+
+
+    if (points.length > 1) {
+
+        important.push(
+            points[points.length - 1]
+        );
+
+    }
+
+
+    important.forEach(
+        (point, index) => {
+
+            const isStart =
+                index === 0;
+
+            const isEnd =
+                index === important.length - 1;
+
+
+            const marker =
+                L.circleMarker(
+                    [
+                        point.lat,
+                        point.lon
+                    ],
+                    {
+
+                        radius:
+                            isStart || isEnd
+                                ? 9
+                                : 6,
+
+                        fillColor:
+                            isStart
+                                ? '#171717'
+                                : (
+                                    isEnd
+                                        ? '#dc2626'
+                                        : '#059669'
+                                ),
+
+                        color: '#fff',
+
+                        weight: 2,
+
+                        fillOpacity: 1
+
+                    }
+                ).addTo(userRouteMap);
+
+
+            marker.bindTooltip(
+                escapeHtml(point.label),
+                {
+                    permanent:
+                        isStart || isEnd,
+
+                    direction: 'top',
+
+                    offset: [0,-7]
+                }
+            );
+
+
+            routeMarkers.push(marker);
+
+        }
+    );
+
+
+    userRouteMap.fitBounds(
+        routeLayer.getBounds(),
+        {
+            padding: [45,45]
+        }
+    );
+
+
+    setTimeout(
+        () => userRouteMap.invalidateSize(),
+        100
+    );
+
+}
+
+
+
+/* ==========================================================
+   4. INDIVIDUAL ALGORITHM VISUAL MAPS
+   ========================================================== */
+
+const algorithmMapStates = {};
+
+
+const algorithmDescriptions = {
+
+    'BFS':
+        'Explores nearby connections level by level, making it easy to understand how the search spreads outward.',
+
+    'DFS':
+        'Follows one available corridor deeply before backtracking, showing how a depth-first search behaves.',
+
+    'Uniform Cost Search':
+        'Expands the lowest-distance option first, prioritizing the cheapest accumulated spatial cost.',
+
+    'Greedy Best First Search':
+        'Uses the destination as its guide and keeps choosing the option that appears closest to the goal.',
+
+    'A* Search':
+        'Combines distance already travelled with an estimate of the remaining distance to make an informed choice.'
+
+};
+
+
+
+function destroyAlgorithmMap(state) {
+
+    if (!state || !state.map) {
+        return;
+    }
+
+
+    state.map.remove();
+
+    state.map = null;
+
+    state.line = null;
+
+    state.markers = [];
+
+}
+
+
+
+function renderAlgorithmStep(
+    algorithm,
+    result
+) {
+
+    const state =
+        algorithmMapStates[algorithm];
+
+
+    if (!state || !state.map) {
+        return;
+    }
+
+
+    const points =
+        result.path_points || [];
+
+
+    const totalLegs =
+        Math.max(
+            points.length - 1,
+            0
+        );
+
+
+    if (totalLegs === 0) {
+
+        state.stepLabel.textContent =
+            'No route steps available';
+
+        state.caption.textContent =
+            'No visual route could be drawn for this algorithm.';
+
+        return;
+
+    }
+
+
+    const legIndex =
+        Math.min(
+            state.step,
+            totalLegs - 1
+        );
+
+
+    const from =
+        points[legIndex];
+
+
+    const to =
+        points[legIndex + 1];
+
+
+    if (state.line) {
+
+        state.map.removeLayer(
+            state.line
+        );
+
+    }
+
+
+    state.markers.forEach(
+        marker =>
+            state.map.removeLayer(marker)
+    );
+
+
+    state.markers = [];
+
+
+    const fromLatLng = [
+        from.lat,
+        from.lon
+    ];
+
+
+    const toLatLng = [
+        to.lat,
+        to.lon
+    ];
+
+
+    state.line =
+        L.polyline(
+            [
+                fromLatLng,
+                toLatLng
+            ],
+            {
+                color: '#059669',
+                weight: 6,
+                opacity: 0.9,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }
+        ).addTo(state.map);
+
+
+    const fromMarker =
+        L.circleMarker(
+            fromLatLng,
+            {
+                radius: 8,
+                fillColor: '#171717',
+                color: '#ffffff',
+                weight: 2,
+                fillOpacity: 1
+            }
+        ).addTo(state.map);
+
+
+    fromMarker.bindTooltip(
+        escapeHtml(from.label),
+        {
+            permanent: true,
+            direction: 'top',
+            offset: [0,-7]
+        }
+    );
+
+
+    const toMarker =
+        L.circleMarker(
+            toLatLng,
+            {
+                radius: 8,
+                fillColor: '#059669',
+                color: '#ffffff',
+                weight: 2,
+                fillOpacity: 1
+            }
+        ).addTo(state.map);
+
+
+    toMarker.bindTooltip(
+        escapeHtml(to.label),
+        {
+            permanent: true,
+            direction: 'top',
+            offset: [0,-7]
+        }
+    );
+
+
+    state.markers.push(
+        fromMarker,
+        toMarker
+    );
+
+
+    state.map.fitBounds(
+        state.line.getBounds(),
+        {
+            padding: [45,45]
+        }
+    );
+
+
+    state.stepLabel.textContent =
+        `Step ${legIndex + 1} of ${totalLegs}`;
+
+
+    state.caption.textContent =
+        `The ${algorithm} algorithm is moving from ${from.label} to ${to.label}. ` +
+        `${algorithmDescriptions[algorithm] || ''}`;
+
+
+    state.nextButton.textContent =
+        legIndex >= totalLegs - 1
+            ? 'Restart Route'
+            : 'Next Step →';
+
+}
+
+
+
+function initializeAlgorithmMap(
+    algorithm,
+    result,
+    index
+) {
+
+    const mapElement =
+        document.getElementById(
+            `algorithm-map-${index}`
+        );
+
+
+    if (!mapElement) {
+        return;
+    }
+
+
+    if (
+        algorithmMapStates[algorithm] &&
+        algorithmMapStates[algorithm].map
+    ) {
+
+        setTimeout(
+            () =>
+                algorithmMapStates[
+                    algorithm
+                ].map.invalidateSize(),
+            100
+        );
+
+
+        renderAlgorithmStep(
+            algorithm,
+            result
+        );
+
+
+        return;
+
+    }
+
+
+    const state =
+        algorithmMapStates[algorithm] = {
+
+            map: null,
+
+            line: null,
+
+            markers: [],
+
+            step: 0,
+
+            stepLabel:
+                document.getElementById(
+                    `algorithm-step-${index}`
+                ),
+
+            caption:
+                document.getElementById(
+                    `algorithm-caption-${index}`
+                ),
+
+            nextButton:
+                document.getElementById(
+                    `algorithm-next-${index}`
+                )
+
+        };
+
+
+    state.map =
+        L.map(
+            mapElement,
+            {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: true,
+                scrollWheelZoom: false
+            }
+        ).setView(
+            [19.0760, 72.8777],
+            11
+        );
+
+
+    L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png',
+        {
+            maxZoom: 19
+        }
+    ).addTo(state.map);
+
+
+    state.nextButton.addEventListener(
+        'click',
+        () => {
+
+            const totalLegs =
+                Math.max(
+                    (result.path_points || []).length - 1,
+                    0
+                );
+
+
+            if (totalLegs === 0) {
+                return;
+            }
+
+
+            state.step =
+                state.step >= totalLegs - 1
+                    ? 0
+                    : state.step + 1;
+
+
+            renderAlgorithmStep(
+                algorithm,
+                result
+            );
+
+        }
+    );
+
+
+    setTimeout(
+        () => {
+
+            state.map.invalidateSize();
+
+            renderAlgorithmStep(
+                algorithm,
+                result
+            );
+
+        },
+        100
+    );
+
+}
+
+
+
+/* ==========================================================
+   5. ROUTE HELPERS
+   ========================================================== */
+
+function compactRouteNames(result) {
+
+    const points =
+        result.path_points || [];
+
+
+    if (!points.length) {
+        return result.route_names || [];
+    }
+
+
+    const labels =
+        points
+            .map(p => p.label)
+            .filter(Boolean);
+
+
+    // Show every stop for normal routes so the user can verify the journey.
+    if (labels.length <= 12) {
+        return labels;
+    }
+
+
+    const picked = [
+        labels[0]
+    ];
+
+
+    const middle =
+        Math.min(
+            4,
+            labels.length - 2
+        );
+
+
+    for (
+        let i = 1;
+        i <= middle;
+        i++
+    ) {
+
+        picked.push(
+            labels[
+                Math.round(
+                    i *
+                    (labels.length - 1) /
+                    (middle + 1)
+                )
+            ]
+        );
+
+    }
+
+
+    picked.push(
+        labels[labels.length - 1]
+    );
+
+
+    return [
+        ...new Set(picked)
+    ];
+
+}
+
+
+
+function renderModeBadges(routeType) {
+
+    if (!routeType) {
+        return '';
+    }
+
+
+    const modes =
+        routeType.modes || [];
+
+
+    if (!modes.length) {
+
+        return `
+            <span class="mode-badge">
+                🛣️ Transit
+            </span>
+        `;
+
+    }
+
+
+    return modes.map(
+        mode => {
+
+            const cls =
+                mode === 'Local Train'
+                    ? 'local'
+                    : mode === 'Metro'
+                        ? 'metro'
+                        : mode === 'Monorail'
+                            ? 'mono'
+                            : mode === 'Bus'
+                                ? 'bus'
+                                : 'mixed';
+
+
+            const icon =
+                mode === 'Local Train'
+                    ? '🚆'
+                    : mode === 'Metro'
+                        ? '🚇'
+                        : mode === 'Monorail'
+                            ? '🚝'
+                            : mode === 'Bus'
+                                ? '🚌'
+                                : '🛣️';
+
+
+            return `
+                <span class="mode-badge ${cls}">
+                    ${icon} ${escapeHtml(mode)}
+                </span>
+            `;
+
+        }
+    ).join('');
+
+}
+
+
+
+/* ==========================================================
+   6. DISPLAY ROUTE RESULTS
+   ========================================================== */
+
+function getFriendlyAlgorithmTitle(algorithm) {
+    const titles = {
+        'BFS': 'Checks nearby choices first',
+        'DFS': 'Follows one path deeply before trying another',
+        'Uniform Cost Search': 'Keeps choosing the cheapest route so far',
+        'Greedy Best First Search': 'Heads toward what looks closest to the destination',
+        'A* Search': 'Balances distance travelled with distance still remaining'
+    };
+    return titles[algorithm] || 'Searches the transport network for a route';
+}
+
+function getFriendlyAlgorithmSteps(algorithm, result) {
+    const points = result.path_points || [];
+    const start = escapeHtml(points[0]?.label || 'your starting point');
+    const end = escapeHtml(points[points.length - 1]?.label || 'your destination');
+    const steps = {
+        'BFS': [
+            ['1', `🏁 Starts at ${start}.`],
+            ['2', '🔎 Checks nearby locations before moving farther away.'],
+            ['3', '📚 Expands the journey layer by layer, like ripples in water.'],
+            ['4', `🎯 Stops when it reaches ${end}.`]
+        ],
+        'DFS': [
+            ['1', `🏁 Starts at ${start}.`],
+            ['2', '🧭 Picks one available path and keeps following it.'],
+            ['3', '↩️ If that path does not work, it goes back and tries another.'],
+            ['4', `🎯 Eventually reaches ${end}, but the first route found may not be the shortest.`]
+        ],
+        'Uniform Cost Search': [
+            ['1', `🏁 Starts at ${start} with zero travel cost.`],
+            ['2', '💰 Looks at the total distance travelled on each possible route.'],
+            ['3', '🏷️ Always explores the cheapest route currently available.'],
+            ['4', `🎯 Reaches ${end} using the lowest-cost path.`]
+        ],
+        'Greedy Best First Search': [
+            ['1', `🏁 Starts at ${start}.`],
+            ['2', '🎯 Looks at which option appears closest to the destination.'],
+            ['3', '➡️ Keeps chasing the destination instead of focusing on cost already spent.'],
+            ['4', `🏁 Reaches ${end}; this can be quick, but the route is not always the best overall.`]
+        ],
+        'A* Search': [
+            ['1', `🏁 Starts at ${start}.`],
+            ['2', '📏 Measures the distance already travelled.'],
+            ['3', '🔭 Estimates how far the destination still is.'],
+            ['4', `⚖️ Combines both ideas to choose a promising route toward ${end}.`]
+        ]
+    };
+    const selected = steps[algorithm] || steps['A* Search'];
+    let html = selected.map(item => `
+        <div class="friendly-algo-step">
+            <span class="friendly-algo-icon">${item[0]}</span>
+            <p class="text-[10px] text-neutral-700 leading-relaxed pt-1">${item[1]}</p>
+        </div>
+    `).join('');
+    if (algorithm === 'A* Search') html += `<div class="friendly-algo-formula mt-1"><strong>Simple rule:</strong> f(n) = distance already travelled + estimated distance remaining</div>`;
+    if (algorithm === 'Uniform Cost Search') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Which available journey has cost me the least so far?”</strong></div>`;
+    if (algorithm === 'BFS') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Check the closest layer first, then the next layer.”</strong></div>`;
+    if (algorithm === 'DFS') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Try this road fully before coming back.”</strong></div>`;
+    if (algorithm === 'Greedy Best First Search') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Which choice looks closest to my destination right now?”</strong></div>`;
+    return html;
+}
+
+
+function displayUserRouteResults(data) {
+
+    const resultsSection =
+        document.getElementById(
+            'userRouteResults'
+        );
+
+
+    document.getElementById(
+        'routeTitle'
+    ).textContent =
+        `${data.start} → ${data.destination}`;
+
+
+    document.getElementById(
+        'routeObjectiveText'
+    ).textContent =
+        'Balanced Route';
+
+
+
+    const bestResultForSummary =
+        data.recommended_result;
+
+    if (!bestResultForSummary) {
+        resultsContainer.innerHTML = `
+            <div class="text-sm text-neutral-500 p-4">
+                No recommendation is available for this route.
+            </div>
+        `;
+        resultsSection.classList.remove('hidden');
+        return;
+    }
+
+
+    const routeType =
+        bestResultForSummary.route_type
+        || {
+            title: 'Transit Route',
+            icon: '🛣️',
+            modes: [],
+            lines: [],
+            is_mixed: false
+        };
+
+
+    const routeBadge =
+        document.getElementById(
+            'routeTypeBadge'
+        );
+
+
+    const routeTypeClass =
+        routeType.modes.length === 1
+            ? (
+                routeType.modes[0] === 'Local Train'
+                    ? 'local'
+                    : routeType.modes[0] === 'Metro'
+                        ? 'metro'
+                        : routeType.modes[0] === 'Monorail'
+                            ? 'mono'
+                            : routeType.modes[0] === 'Bus'
+                                ? 'bus'
+                                : ''
+            )
+            : 'mixed';
+
+
+    routeBadge.className =
+        `mode-badge ${routeTypeClass}`;
+
+
+    routeBadge.textContent =
+        `${routeType.icon} ${routeType.title}`;
+
+
+    document.getElementById(
+        'routeTypeLine'
+    ).textContent =
+        routeType.lines.length
+            ? routeType.lines.join(' • ')
+            : (
+                routeType.modes.join(' • ')
+                || 'Transit network'
+            );
+
+
+    document.getElementById(
+        'routeTypeExplanation'
+    ).textContent =
+        routeType.is_mixed
+            ? 'This journey uses more than one transport type or requires a transfer.'
+            : `This recommended route primarily uses ${
+                routeType.modes[0]
+                || 'the transit network'
+            }.`;
+
+
+
+    /* Show results */
+
+    resultsSection.classList.remove(
+        'hidden'
+    );
+
+
+
+    /* Best result */
+
+    const bestResult =
+        data.recommended_result;
+
+    if (!bestResult) {
+        return;
+    }
+
+
+    const recommendedType =
+        bestResult.route_type
+        || routeType;
+
+
+    document.getElementById(
+        'recommendedRoute'
+    ).textContent =
+        `${
+            recommendedType.icon
+            || '🛣️'
+        } ${
+            recommendedType.title
+            || 'Transit Route'
+        }`;
+
+
+    document.getElementById(
+        'recommendedMode'
+    ).textContent =
+        recommendedType.lines &&
+        recommendedType.lines.length
+            ? recommendedType.lines.join(' • ')
+            : (
+                recommendedType.modes.join(' • ')
+                || 'Transit network'
+            );
+
+
+    document.getElementById(
+        'recommendedDistance'
+    ).textContent =
+        `${bestResult.path_cost} km`;
+
+
+    document.getElementById(
+        'recommendedStops'
+    ).textContent =
+        bestResult.stops;
+
+
+
+    /* Journey timeline */
+
+    const routeSteps =
+        document.getElementById(
+            'recommendedRouteSteps'
+        );
+
+
+    const routeModeBox =
+        document.getElementById(
+            'recommendedRouteMode'
+        );
+
+
+    const journeyPoints =
+        bestResult.path_points || [];
+
+
+    const fallbackType =
+        bestResult.route_type
+        || routeType;
+
+
+    routeModeBox.innerHTML = `
+
+        <div class="flex flex-wrap items-center gap-2">
+
+            ${renderModeBadges(fallbackType)}
+
+            <span class="text-[10px] text-neutral-500 font-medium">
+
+                ${
+                    fallbackType.is_mixed
+                        ? 'Transfers may be required'
+                        : 'Primary transport mode'
+                }
+
+            </span>
+
+        </div>
+
+    `;
+
+
+
+    if (!journeyPoints.length) {
+
+        routeSteps.innerHTML =
+            `
+                <div class="text-xs text-neutral-500">
+                    No route stops available.
+                </div>
+            `;
+
+    } else {
+
+        const fallbackMode =
+            (
+                fallbackType.modes &&
+                fallbackType.modes[0]
+            )
+            || 'Transit';
+
+
+        routeSteps.innerHTML =
+            journeyPoints
+                .map(
+                    (point, i) => {
+
+                        const isStart =
+                            i === 0;
+
+
+                        const isEnd =
+                            i === journeyPoints.length - 1;
+
+
+                        const pointMode =
+                            point.mode
+                            || fallbackMode;
+
+
+                        const pointLine =
+                            point.line
+                            || '';
+
+
+                        const pointType = {
+
+                            modes: [
+                                pointMode
+                            ],
+
+                            lines:
+                                pointLine
+                                    ? [pointLine]
+                                    : [],
+
+                            is_mixed: false
+
+                        };
+
+
+                        return `
+
+                            <div
+                                class="journey-stop ${
+                                    isStart
+                                        ? 'start'
+                                        : ''
+                                } ${
+                                    isEnd
+                                        ? 'end'
+                                        : ''
+                                }"
+                            >
+
+                                <div class="journey-dot">
+
+                                    ${
+                                        isStart
+                                            ? 'S'
+                                            : isEnd
+                                                ? 'D'
+                                                : i
+                                    }
+
+                                </div>
+
+
+                                <div class="journey-stop-content">
+
+                                    <div class="journey-stop-name">
+
+                                        ${escapeHtml(
+                                            point.label
+                                            || point.name
+                                            || 'Unnamed stop'
+                                        )}
+
+                                    </div>
+
+
+                                    <div class="journey-stop-meta">
+
+                                        ${renderModeBadges(pointType)}
+
+                                        ${
+                                            pointLine
+                                                ? `
+                                                    <span class="text-[9px] text-neutral-500 font-mono">
+                                                        ${escapeHtml(pointLine)}
+                                                    </span>
+                                                  `
+                                                : ''
+                                        }
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            ${
+                                !isEnd
+                                    ? `
+                                        <div class="journey-direction">
+                                            ↓ NEXT STOP
+                                        </div>
+                                      `
+                                    : ''
+                            }
+
+                        `;
+
+                    }
+                )
+                .join('');
+
+    }
+
+
+    drawUserRoute(bestResult);
+
+}
+
+
+
+/* ==========================================================
+   7. SEARCHABLE TRANSPORT LOCATION PICKERS
+   ========================================================== */
+
+const stationGroups =
+    JSON.parse(document.getElementById('stationGroupsData').textContent);
+
+
+const stationCatalog = [];
+
+
+Object.entries(
+    stationGroups || {}
+).forEach(
+    ([mode, items]) => {
+
+        (items || []).forEach(
+            item => {
+
+                stationCatalog.push({
+
+                    name:
+                        String(
+                            item.name || ''
+                        ).trim(),
+
+                    line:
+                        String(
+                            item.line || ''
+                        ).trim(),
+
+                    mode:
+                        mode
+
+                });
+
+            }
+        );
+
+    }
+);
+
+
+
+const modeInfo = {
+
+    'Local Train': {
+        icon: '🚆',
+        short: 'Local Train'
+    },
+
+    'Metro': {
+        icon: '🚇',
+        short: 'Metro'
+    },
+
+    'Monorail': {
+        icon: '🚝',
+        short: 'Monorail'
+    },
+
+    'Bus': {
+        icon: '🚌',
+        short: 'Bus'
+    },
+
+    'Other Transit': {
+        icon: '📍',
+        short: 'Other Transit'
+    }
+
+};
+
+
+
+function setupStationPicker(picker) {
+
+    const input =
+        picker.querySelector(
+            '.station-search'
+        );
+
+
+    const menu =
+        picker.querySelector(
+            '.station-menu'
+        );
+
+
+    const results =
+        picker.querySelector(
+            '.station-results'
+        );
+
+
+    const clear =
+        picker.querySelector(
+            '.station-clear'
+        );
+
+
+    let selectedMode =
+        'all';
+
+
+
+    function renderResults() {
+
+        const query =
+            input.value
+                .trim()
+                .toLowerCase();
+
+
+        const matches =
+            stationCatalog.filter(
+                item => {
+
+                    const modeMatch =
+                        selectedMode === 'all'
+                        || item.mode === selectedMode;
+
+
+                    const text =
+                        `${item.name} ${item.line} ${item.mode}`
+                            .toLowerCase();
+
+
+                    return (
+                        modeMatch &&
+                        (
+                            !query ||
+                            text.includes(query)
+                        )
+                    );
+
+                }
+            );
+
+
+        const limit =
+            query
+                ? 80
+                : 40;
+
+
+        results.innerHTML = '';
+
+
+        if (!matches.length) {
+
+            results.innerHTML =
+                `
+                    <div class="station-empty">
+
+                        No matching locations.
+
+                        <br>
+
+                        <span class="text-[10px]">
+                            Try another spelling or category.
+                        </span>
+
+                    </div>
+                `;
+
+            return;
+
         }
 
-        // CSV Export
-        document.getElementById('exportCsvBtn').addEventListener('click', () => {
-            let csvContent = "data:text/csv;charset=utf-8,Ward,Name,Metric\n";
-            prioritizedData.forEach(item => {
-                csvContent += `"${item.ward}","${item.name}","Score: ${item.score}"\n`;
-            });
-            poorAccessData.forEach(item => {
-                csvContent += `"${item.ward}","${item.name}","Distance: ${item.distance}km"\n`;
-            });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "mumbai_transit_intelligence.csv");
-            document.body.appendChild(link);
+
+        matches
+            .slice(0, limit)
+            .forEach(
+                item => {
+
+                    const info =
+                        modeInfo[item.mode]
+                        || modeInfo['Other Transit'];
+
+
+                    const button =
+                        document.createElement('button');
+
+
+                    button.type =
+                        'button';
+
+
+                    button.className =
+                        'station-result';
+
+
+                    button.innerHTML = `
+
+                        <div class="station-result-name">
+
+                            ${escapeHtml(
+                                item.name
+                            )}
+
+                        </div>
+
+
+                        <div class="station-result-meta">
+
+                            <span class="station-result-mode">
+
+                                ${info.icon}
+                                ${escapeHtml(info.short)}
+
+                            </span>
+
+
+                            ${
+                                item.line &&
+                                item.line.toLowerCase() !== 'nan'
+                                    ? `
+                                        <span>
+                                            ${escapeHtml(item.line)}
+                                        </span>
+                                      `
+                                    : ''
+                            }
+
+                        </div>
+
+                    `;
+
+
+                    button.addEventListener(
+                        'click',
+                        () => {
+
+                            input.value =
+                                item.name;
+
+
+                            input.dataset.mode =
+                                item.mode;
+
+
+                            input.dataset.line =
+                                item.line || '';
+
+
+                            clear.classList.remove(
+                                'hidden'
+                            );
+
+
+                            menu.classList.add(
+                                'hidden'
+                            );
+
+                        }
+                    );
+
+
+                    results.appendChild(
+                        button
+                    );
+
+                }
+            );
+
+
+        if (matches.length > limit) {
+
+            const more =
+                document.createElement('div');
+
+
+            more.className =
+                'px-3 py-2 text-[10px] text-neutral-500 bg-neutral-950';
+
+
+            more.textContent =
+                `Showing ${limit} of ${matches.length} matches — type more to narrow it down.`;
+
+
+            results.appendChild(
+                more
+            );
+
+        }
+
+    }
+
+
+
+    input.addEventListener(
+        'focus',
+        () => {
+
+            menu.classList.remove(
+                'hidden'
+            );
+
+            renderResults();
+
+        }
+    );
+
+
+    input.addEventListener(
+        'input',
+        () => {
+
+            delete input.dataset.mode;
+
+            delete input.dataset.line;
+
+
+            clear.classList.toggle(
+                'hidden',
+                !input.value
+            );
+
+
+            menu.classList.remove(
+                'hidden'
+            );
+
+
+            renderResults();
+
+        }
+    );
+
+
+    clear.addEventListener(
+        'click',
+        () => {
+
+            input.value = '';
+
+            delete input.dataset.mode;
+
+            delete input.dataset.line;
+
+
+            clear.classList.add(
+                'hidden'
+            );
+
+
+            input.focus();
+
+            renderResults();
+
+        }
+    );
+
+
+    picker
+        .querySelectorAll('.station-mode')
+        .forEach(
+            tab => {
+
+                tab.addEventListener(
+                    'click',
+                    () => {
+
+                        selectedMode =
+                            tab.dataset.mode;
+
+
+                        picker
+                            .querySelectorAll(
+                                '.station-mode'
+                            )
+                            .forEach(
+                                t =>
+                                    t.classList.remove(
+                                        'active'
+                                    )
+                            );
+
+
+                        tab.classList.add(
+                            'active'
+                        );
+
+
+                        menu.classList.remove(
+                            'hidden'
+                        );
+
+
+                        renderResults();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+
+document
+    .querySelectorAll(
+        '.station-picker'
+    )
+    .forEach(
+        setupStationPicker
+    );
+
+
+
+/* ==========================================================
+   9. FIND ROUTE
+   ========================================================== */
+
+document
+    .getElementById(
+        'findRouteBtn'
+    )
+    .addEventListener(
+        'click',
+        async () => {
+
+            const start =
+                document
+                    .getElementById(
+                        'startStation'
+                    )
+                    .value
+                    .trim();
+
+
+            const destination =
+                document
+                    .getElementById(
+                        'destinationStation'
+                    )
+                    .value
+                    .trim();
+
+
+
+
+            const status =
+                document.getElementById(
+                    'routeStatus'
+                );
+
+
+
+            if (!start || !destination) {
+
+                status.textContent =
+                    'Please select both a starting location and destination.';
+
+
+                status.classList.remove(
+                    'hidden'
+                );
+
+
+                return;
+
+            }
+
+
+
+            if (
+                start.toLowerCase() ===
+                destination.toLowerCase()
+            ) {
+
+                status.textContent =
+                    'Starting location and destination must be different.';
+
+
+                status.classList.remove(
+                    'hidden'
+                );
+
+
+                return;
+
+            }
+
+
+
+            status.textContent =
+                'Running BFS, DFS, UCS, Greedy Best First and A*...';
+
+
+            status.classList.remove(
+                'hidden'
+            );
+
+
+            const button =
+                document.getElementById(
+                    'findRouteBtn'
+                );
+
+
+            button.disabled = true;
+
+
+            button.classList.add(
+                'opacity-60',
+                'cursor-not-allowed'
+            );
+
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        '/find-route',
+                        {
+
+                            method: 'POST',
+
+                            headers: {
+                                'Content-Type':
+                                    'application/json'
+                            },
+
+                            body:
+                                JSON.stringify(
+                                    {
+                                        start:
+                                            start,
+
+                                        destination:
+                                            destination
+                                    }
+                                )
+
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error
+                        || 'Unable to calculate the route.'
+                    );
+
+                }
+
+
+                displayUserRouteResults(
+                    data
+                );
+
+
+                status.textContent =
+                    `Route calculated successfully: ${data.start} → ${data.destination}`;
+
+
+                document
+                    .getElementById(
+                        'userRouteResults'
+                    )
+                    .scrollIntoView(
+                        {
+                            behavior: 'smooth',
+                            block: 'start'
+                        }
+                    );
+
+            }
+
+
+            catch (error) {
+
+                console.error(error);
+
+
+                status.textContent =
+                    error.message
+                    || 'Something went wrong while calculating the route.';
+
+            }
+
+
+            finally {
+
+                button.disabled = false;
+
+
+                button.classList.remove(
+                    'opacity-60',
+                    'cursor-not-allowed'
+                );
+
+            }
+
+        }
+    );
+
+
+
+/* ==========================================================
+   10. WARD SEARCH
+   ========================================================== */
+
+const searchInput =
+    document.getElementById(
+        'wardSearch'
+    );
+
+
+searchInput.addEventListener(
+    'input',
+    event => {
+
+        const query =
+            event.target.value
+                .toLowerCase()
+                .trim();
+
+
+        document
+            .querySelectorAll(
+                '.ward-item, .priority-item'
+            )
+            .forEach(
+                item => {
+
+                    const name =
+                        item.getAttribute(
+                            'data-name'
+                        ) || '';
+
+
+                    item.style.display =
+                        name.includes(query)
+                            ? 'flex'
+                            : 'none';
+
+                }
+            );
+
+    }
+);
+
+
+
+/* ==========================================================
+   11. WARD MODAL
+   ========================================================== */
+
+function openWardModal(
+    ward,
+    location,
+    metric,
+    category
+) {
+
+    document.getElementById(
+        'modalCategory'
+    ).textContent =
+        category;
+
+
+    document.getElementById(
+        'modalTitle'
+    ).textContent =
+        `${ward} (${location})`;
+
+
+    document.getElementById(
+        'modalMetric'
+    ).textContent =
+        metric;
+
+
+    document.getElementById(
+        'wardModal'
+    ).classList.remove(
+        'hidden'
+    );
+
+}
+
+
+
+function closeWardModal() {
+
+    document.getElementById(
+        'wardModal'
+    ).classList.add(
+        'hidden'
+    );
+
+}
+
+
+
+document
+    .querySelectorAll(
+        '.ward-item, .priority-item'
+    )
+    .forEach(
+        item => {
+
+            item.addEventListener(
+                'click',
+                () => {
+
+                    openWardModal(
+
+                        `Ward ${item.dataset.ward}`,
+
+                        item.dataset.location,
+
+                        item.dataset.metric,
+
+                        item.dataset.category
+
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+
+document
+    .getElementById(
+        'closeModalBtn'
+    )
+    .addEventListener(
+        'click',
+        closeWardModal
+    );
+
+
+document
+    .getElementById(
+        'closeModalBtn2'
+    )
+    .addEventListener(
+        'click',
+        closeWardModal
+    );
+
+
+document
+    .getElementById(
+        'wardModal'
+    )
+    .addEventListener(
+        'click',
+        event => {
+
+            if (
+                event.target.id ===
+                'wardModal'
+            ) {
+
+                closeWardModal();
+
+            }
+
+        }
+    );
+
+
+
+/* ==========================================================
+   12. CSV EXPORT
+   ========================================================== */
+
+document
+    .getElementById(
+        'exportCsvBtn'
+    )
+    .addEventListener(
+        'click',
+        () => {
+
+            let csvContent =
+                'Ward,Name,Metric\n';
+
+
+            prioritizedData.forEach(
+                item => {
+
+                    csvContent +=
+                        `"${item.ward}","${
+                            String(item.name)
+                                .replaceAll('"', '""')
+                        }","Score: ${item.score}"\n`;
+
+                }
+            );
+
+
+            poorAccessData.forEach(
+                item => {
+
+                    csvContent +=
+                        `"${item.ward}","${
+                            String(item.name)
+                                .replaceAll('"', '""')
+                        }","Distance: ${item.distance} km"\n`;
+
+                }
+            );
+
+
+            const blob =
+                new Blob(
+                    [csvContent],
+                    {
+                        type:
+                            'text/csv;charset=utf-8;'
+                    }
+                );
+
+
+            const url =
+                URL.createObjectURL(
+                    blob
+                );
+
+
+            const link =
+                document.createElement(
+                    'a'
+                );
+
+
+            link.href =
+                url;
+
+
+            link.download =
+                'mumbai_transit_intelligence.csv';
+
+
+            document.body.appendChild(
+                link
+            );
+
+
             link.click();
-            document.body.removeChild(link);
-        });
-    </script>
+
+
+            link.remove();
+
+
+            URL.revokeObjectURL(
+                url
+            );
+
+        }
+    );
+
+
+
+/* ==========================================================
+   13. CLOSE STATION MENUS WHEN CLICKING OUTSIDE
+   ========================================================== */
+
+document.addEventListener(
+    'click',
+    event => {
+
+        document
+            .querySelectorAll(
+                '.station-picker'
+            )
+            .forEach(
+                picker => {
+
+                    if (
+                        !picker.contains(
+                            event.target
+                        )
+                    ) {
+
+                        const menu =
+                            picker.querySelector(
+                                '.station-menu'
+                            );
+
+
+                        if (menu) {
+
+                            menu.classList.add(
+                                'hidden'
+                            );
+
+                        }
+
+                    }
+
+                }
+            );
+
+    }
+);
+
+
+
+/* ==========================================================
+   14. INITIAL NAVIGATION STATE
+   ========================================================== */
+
+const firstNavLink =
+    document.querySelector(
+        '.nav-link[data-section="overview"]'
+    );
+
+
+if (firstNavLink) {
+
+    firstNavLink.classList.add(
+        'active'
+    );
+
+}
+
+</script>
+
 </body>
 </html>
