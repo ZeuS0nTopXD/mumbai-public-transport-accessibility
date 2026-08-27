@@ -1,0 +1,2 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+"1,2,3,4,5,6,7",1,1,1,1,1,1,1,20260819,20270215

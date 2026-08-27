@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "transit_mtime_ns": 1787822326379705400,
+  "best_two": [
+    "Uniform Cost Search",
+    "A* Search"
+  ],
+  "results": [
+    {
+      "algorithm": "Uniform Cost Search",
+      "success_rate": 1.0,
+      "optimality": 1.0,
+      "efficiency": 1.0,
+      "final_score": 1.0,
+      "average_path_cost": 12.279944476518335,
+      "average_nodes_expanded": 3137.9411764705883,
+      "average_execution_time": 0.04301692156449837,
+      "successful_searches": 51,
+      "benchmark_routes": 51
+    },
+    {
+      "algorithm": "A* Search",
+      "success_rate": 1.0,
+      "optimality": 0.8418345193670208,
+      "efficiency": 0.9755309985101382,
+      "final_score": 0.9037649951867545,
+      "average_path_cost": 15.081171532219297,
+      "average_nodes_expanded": 1242.7843137254902,
+      "average_execution_time": 0.01462716665392851,
+      "successful_searches": 51,
+      "benchmark_routes": 51
+    },
+    {
+      "algorithm": "Greedy Best First Search",
+      "success_rate": 1.0,
+      "optimality": 0.5183953564644656,
+      "efficiency": 0.9998752417191691,
+      "final_score": 0.6827909108838717,
+      "average_path_cost": 26.56296053393742,
+      "average_nodes_expanded": 489.9019607843137,
+      "average_execution_time": 0.019979656861145414,
+      "successful_searches": 51,
+      "benchmark_routes": 51
+    },
+    {
+      "algorithm": "BFS",
+      "success_rate": 1.0,
+      "optimality": 0.5961932958797439,
+      "efficiency": 0.7837575522928697,
+      "final_score": 0.6772284663485019,
+      "average_path_cost": 27.398883276759275,
+      "average_nodes_expanded": 3201.098039215686,
+      "average_execution_time": 0.010544354913244937,
+      "successful_searches": 51,
+      "benchmark_routes": 51
+    },
+    {
+      "algorithm": "DFS",
+      "success_rate": 1.0,
+      "optimality": 0.04115453954693011,
+      "efficiency": 0.7695702924727126,
+      "final_score": 0.07813085225677033,
+      "average_path_cost": 447.0545526604494,
+      "average_nodes_expanded": 3120.0392156862745,
+      "average_execution_time": 0.2508163568928984,
+      "successful_searches": 51,
+      "benchmark_routes": 51
+    }
+  ]
+}
