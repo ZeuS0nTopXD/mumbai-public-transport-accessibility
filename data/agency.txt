@@ -1,5 +1,0 @@
-agency_id,agency_name,agency_url,agency_timezone,agency_phone,agency_email
-KDMT,Kalyan Dombivali Municipal Transport,https://kdmc.gov.in,Asia/Kolkata,+91 02512202132,kalyandombivlitransport@gmail.com
-TMT,Thane Municipal Transport,https://www.thanecity.gov.in,Asia/Kolkata,+91 02225394922,
-BEST,Brihanmumbai Electric Supply and Transport,https://www.bestundertaking.com,Asia/Kolkata,+91 1800227550,transport@bestundertaking.com
-VVMT,Vasai-Virar Municipal Transport,https://vvcmc.in,Asia/Kolkata,,
