@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
 
     <title>Mumbai Public Transport Accessibility Project</title>
 
@@ -16,7 +17,6 @@
         href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet"
     >
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -582,14 +582,6 @@
                 </a>
 
                 <a
-                    href="#routePlanner"
-                    data-section="routePlanner"
-                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
-                >
-                    Route Planner
-                </a>
-
-                <a
                     href="#algorithms"
                     data-section="algorithms"
                     class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
@@ -605,13 +597,6 @@
                     Analytics
                 </a>
 
-                <a
-                    href="#deserts"
-                    data-section="deserts"
-                    class="nav-link px-4 py-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
-                >
-                    Wards
-                </a>
 
             </div>
 
@@ -665,31 +650,24 @@
             </a>
 
             <a
-                href="#routePlanner"
-                class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
-            >
-                03 — Route Planner
-            </a>
-
-            <a
                 href="#algorithms"
                 class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
             >
-                04 — Analysis
+                03 — Analysis
             </a>
 
             <a
                 href="#analytics"
                 class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
             >
-                05 — Analytics
+                04 — Analytics
             </a>
 
             <a
                 href="#deserts"
                 class="mobile-nav-link block px-3 py-2 text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-800"
             >
-                06 — Ward Intelligence
+                05 — Ward Intelligence
             </a>
 
         </div>
@@ -729,9 +707,7 @@
                 class="text-sm md:text-base text-neutral-600 max-w-3xl leading-relaxed"
             >
                 An interactive dashboard that compares five
-                algorithms and lets users calculate routes between transport locations based on
-                a balanced route objective.
-            </p>
+                algorithms.
 
         </div>
 
@@ -861,20 +837,11 @@
 
                 Start here if graph algorithms are new to you. Each card uses a small illustrative
                 Mumbai journey so you can see the search process, not just read a definition.
-                The examples are teaching simulations; the route planner below uses your actual spatial graph.
+                The examples are teaching simulations.
 
             </p>
 
         </div>
-
-
-        <a
-            href="#routePlanner"
-            class="bg-neutral-900 text-white px-5 py-3 text-xs font-mono uppercase hover:bg-neutral-800 transition"
-        >
-            Try Your Own Route ↓
-        </a>
-
     </div>
 
 
@@ -1313,488 +1280,8 @@
 </section>
 
 
-
 <!-- ========================================================== -->
-<!-- SECTION 02 — ROUTE PLANNER                                 -->
-<!-- ========================================================== -->
-
-<section
-    id="routePlanner"
-    class="bg-neutral-900 text-white border border-neutral-800 p-8 shadow-sm scroll-mt-24"
->
-
-    <div class="section-divider mb-6">
-
-        <span class="section-number text-neutral-600">
-            02
-        </span>
-
-        <div class="h-px bg-neutral-800 flex-1"></div>
-
-        <span class="section-label text-neutral-600">
-            Journey Planning
-        </span>
-
-    </div>
-
-
-    <div class="flex flex-col lg:flex-row justify-between gap-6">
-
-        <div>
-
-            <span class="text-xs font-mono uppercase tracking-widest text-emerald-400">
-                Interactive Route Planner
-            </span>
-
-            <h2 class="editorial-title text-2xl md:text-3xl font-bold mt-2">
-                Plan Your Journey
-            </h2>
-
-            <p class="text-sm text-neutral-400 mt-2 max-w-3xl leading-relaxed">
-
-                Choose where you are starting, where you want to go, and what matters most to you.
-                The system then compares all five algorithms and recommends the best match.
-
-            </p>
-
-        </div>
-
-
-        <div class="text-xs font-mono text-neutral-500 border border-neutral-800 px-4 py-3 h-fit">
-
-            {{ stations|length }} SEARCHABLE LOCATIONS
-
-        </div>
-
-    </div>
-
-
-
-    <!-- START / DESTINATION -->
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-7">
-
-
-        <!-- START -->
-
-        <div class="relative">
-
-            <label
-                for="startStation"
-                class="text-xs font-mono uppercase text-neutral-400"
-            >
-                1. Where are you starting?
-            </label>
-
-
-            <div
-                class="station-picker mt-2"
-                data-picker="start"
-            >
-
-                <div class="relative">
-
-                    <input
-                        id="startStation"
-                        type="text"
-                        autocomplete="off"
-                        placeholder="🔍 Search station, bus stop or location..."
-                        class="station-search w-full bg-neutral-800 border border-neutral-700 text-white px-4 py-3.5 pr-12 text-sm focus:outline-none focus:border-emerald-500"
-                    >
-
-                    <button
-                        type="button"
-                        class="station-clear hidden absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                        aria-label="Clear"
-                    >
-                        ✕
-                    </button>
-
-                </div>
-
-
-                <div
-                    class="station-menu hidden absolute left-0 right-0 mt-2 z-40 bg-neutral-900 border border-neutral-700 shadow-2xl overflow-hidden"
-                >
-
-                    <div
-                        class="station-mode-tabs p-2 border-b border-neutral-800 flex flex-wrap gap-1.5"
-                    >
-
-                        <button
-                            type="button"
-                            data-mode="all"
-                            class="station-mode active"
-                        >
-                            All
-                        </button>
-
-                        <button
-                            type="button"
-                            data-mode="Local Train"
-                            class="station-mode"
-                        >
-                            🚆 Local
-                        </button>
-
-                        <button
-                            type="button"
-                            data-mode="Bus"
-                            class="station-mode"
-                        >
-                            🚌 Bus
-                        </button>
-                    </div>
-
-
-                    <div
-                        class="px-3 py-2 text-[10px] font-mono text-neutral-500 border-b border-neutral-800"
-                    >
-                        Type a few letters to find a location
-                    </div>
-
-
-                    <div class="station-results max-h-72 overflow-y-auto"></div>
-
-                </div>
-
-            </div>
-
-
-            <p class="text-[10px] text-neutral-500 mt-2">
-                Search by name, then choose a transport category to narrow the list.
-            </p>
-
-        </div>
-
-
-
-        <!-- DESTINATION -->
-
-        <div class="relative">
-
-            <label
-                for="destinationStation"
-                class="text-xs font-mono uppercase text-neutral-400"
-            >
-                2. Where do you want to go?
-            </label>
-
-
-            <div
-                class="station-picker mt-2"
-                data-picker="destination"
-            >
-
-                <div class="relative">
-
-                    <input
-                        id="destinationStation"
-                        type="text"
-                        autocomplete="off"
-                        placeholder="🔍 Search station, bus stop or location..."
-                        class="station-search w-full bg-neutral-800 border border-neutral-700 text-white px-4 py-3.5 pr-12 text-sm focus:outline-none focus:border-emerald-500"
-                    >
-
-                    <button
-                        type="button"
-                        class="station-clear hidden absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                        aria-label="Clear"
-                    >
-                        ✕
-                    </button>
-
-                </div>
-
-
-                <div
-                    class="station-menu hidden absolute left-0 right-0 mt-2 z-40 bg-neutral-900 border border-neutral-700 shadow-2xl overflow-hidden"
-                >
-
-                    <div
-                        class="station-mode-tabs p-2 border-b border-neutral-800 flex flex-wrap gap-1.5"
-                    >
-
-                        <button
-                            type="button"
-                            data-mode="all"
-                            class="station-mode active"
-                        >
-                            All
-                        </button>
-
-                        <button
-                            type="button"
-                            data-mode="Local Train"
-                            class="station-mode"
-                        >
-                            🚆 Local
-                        </button>
-
-                        <button
-                            type="button"
-                            data-mode="Bus"
-                            class="station-mode"
-                        >
-                            🚌 Bus
-                        </button>
-
-                    </div>
-
-
-                    <div
-                        class="px-3 py-2 text-[10px] font-mono text-neutral-500 border-b border-neutral-800"
-                    >
-                        Type a few letters to find a location
-                    </div>
-
-
-                    <div class="station-results max-h-72 overflow-y-auto"></div>
-
-                </div>
-
-            </div>
-
-
-            <p class="text-[10px] text-neutral-500 mt-2">
-                Search by name — no need to scroll through thousands of locations.
-            </p>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- BUTTON -->
-
-    <div class="flex flex-wrap items-center gap-4 mt-7">
-
-        <button
-            id="findRouteBtn"
-            type="button"
-            class="bg-emerald-600 hover:bg-emerald-500 text-white px-7 py-3.5 text-xs font-mono uppercase transition"
-        >
-            Find My Best Route →
-        </button>
-
-        <span
-            id="routeStatus"
-            class="hidden text-xs font-mono text-emerald-400"
-        ></span>
-
-    </div>
-
-
-
-</section>
-
-
-
-<!-- ========================================================== -->
-<!-- SECTION 03 — USER ROUTE RESULTS                             -->
-<!-- ========================================================== -->
-
-<section
-    id="userRouteResults"
-    class="hidden space-y-8 scroll-mt-24"
->
-
-    <div class="section-divider">
-
-        <span class="section-number">
-            03
-        </span>
-
-        <div class="section-divider-line"></div>
-
-        <span class="section-label">
-            Your Calculated Journey
-        </span>
-
-    </div>
-
-
-    <div class="bg-white border border-neutral-300 p-8 shadow-sm">
-
-        <div
-            class="flex flex-col lg:flex-row justify-between gap-6 border-b border-neutral-200 pb-5"
-        >
-
-            <div>
-
-                <span class="text-xs font-mono uppercase text-emerald-700">
-                    Your Journey
-                </span>
-
-                <h2
-                    id="routeTitle"
-                    class="editorial-title text-2xl md:text-3xl font-bold mt-2"
-                ></h2>
-
-                <p
-                    id="routeObjectiveText"
-                    class="text-xs text-neutral-500 mt-2"
-                ></p>
-
-
-                <div
-                    id="routeTypeBanner"
-                    class="route-type-banner mt-4 p-4 rounded"
-                >
-
-                    <div class="flex flex-wrap items-center gap-3">
-
-                        <span
-                            id="routeTypeBadge"
-                            class="mode-badge"
-                        ></span>
-
-                        <div>
-
-                            <p
-                                id="routeTypeLine"
-                                class="text-xs font-semibold text-neutral-900"
-                            ></p>
-
-                            <p
-                                id="routeTypeExplanation"
-                                class="text-[10px] text-neutral-500 mt-1"
-                            ></p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 mt-7">
-
-
-            <!-- ROUTE MAP -->
-
-            <div class="xl:col-span-12">
-
-                <div class="border border-neutral-300 rounded overflow-hidden">
-
-                    <div
-                        id="userRouteMap"
-                        class="route-summary-map"
-                    ></div>
-
-                </div>
-
-
-                <!-- ROUTE METRICS -->
-
-                <div class="mt-4 grid grid-cols-3 gap-3">
-
-                    <div class="bg-[#f4f4f0] border border-neutral-200 p-4">
-
-                        <span class="text-[10px] text-neutral-500 block">
-                            Recommended Route
-                        </span>
-
-                        <strong
-                            id="recommendedRoute"
-                            class="text-sm block mt-1"
-                        ></strong>
-
-                        <span
-                            id="recommendedMode"
-                            class="text-[10px] text-emerald-700 font-semibold block mt-2"
-                        ></span>
-
-                    </div>
-
-
-                    <div class="bg-[#f4f4f0] border border-neutral-200 p-4">
-
-                        <span class="text-[10px] text-neutral-500 block">
-                            Distance
-                        </span>
-
-                        <strong
-                            id="recommendedDistance"
-                            class="text-sm block mt-1"
-                        ></strong>
-
-                    </div>
-
-
-                    <div class="bg-[#f4f4f0] border border-neutral-200 p-4">
-
-                        <span class="text-[10px] text-neutral-500 block">
-                            Stops
-                        </span>
-
-                        <strong
-                            id="recommendedStops"
-                            class="text-sm block mt-1"
-                        ></strong>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- JOURNEY -->
-
-                <div class="mt-4 bg-[#f4f4f0] border border-neutral-200 p-5">
-
-                    <div class="flex justify-between items-center gap-4">
-
-                        <span class="text-xs font-mono uppercase text-neutral-500">
-                            Recommended Journey
-                        </span>
-
-                        <span class="text-[10px] text-neutral-500">
-                            Simplified view
-                        </span>
-
-                    </div>
-
-
-                    <div
-                        id="recommendedRouteMode"
-                        class="mt-4"
-                    ></div>
-
-
-                    <div
-                        id="recommendedRouteSteps"
-                        class="route-journey-list mt-4"
-                    ></div>
-
-
-                    <p class="text-[10px] text-neutral-500 mt-4">
-
-                        Each stop is shown in travel order from START to DESTINATION.
-                        Transport badges show the route type used.
-
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-
-<!-- ========================================================== -->
-<!-- SECTION 04 — NETWORK ALGORITHM ANALYSIS                    -->
+<!-- SECTION 02 — NETWORK ALGORITHM ANALYSIS                    -->
 <!-- ========================================================== -->
 
 <section
@@ -1805,7 +1292,7 @@
     <div class="section-divider lg:col-span-12">
 
         <span class="section-number">
-            04
+            02
         </span>
 
         <div class="section-divider-line"></div>
@@ -1835,7 +1322,10 @@
                 </h2>
 
                 <p class="text-xs text-neutral-500 mt-1">
-                    Baseline comparison across the ward-to-transit spatial graph.
+                    Benchmark comparison across the official railway timetable graph.
+            <span class="block text-xs text-neutral-500 mt-1">
+                Score = 35% route quality + 30% search efficiency + 20% consistency + 15% success.
+            </span>
                 </p>
 
             </div>
@@ -1878,11 +1368,11 @@
 
                             {% if result.algorithm == 'A* Search' %}
 
-                                Distance-aware lookahead navigator
+                                Timetable-aware lookahead navigator
 
                             {% elif result.algorithm == 'Uniform Cost Search' %}
 
-                                Lowest cumulative graph-distance search
+                                Lowest cumulative scheduled-time search
 
                             {% elif result.algorithm == 'Greedy Best First Search' %}
 
@@ -1968,7 +1458,7 @@
                 >
 
                     <span class="text-neutral-500">
-                        Overall Efficiency Score
+                        Overall Evaluation Score
                     </span>
 
                     <strong>
@@ -2075,7 +1565,7 @@
 
 
 <!-- ========================================================== -->
-<!-- SECTION 05 — SPATIAL ANALYTICS                             -->
+<!-- SECTION 03 — SPATIAL ANALYTICS                             -->
 <!-- ========================================================== -->
 
 <section
@@ -2086,7 +1576,7 @@
     <div class="section-divider">
 
         <span class="section-number">
-            05
+            03
         </span>
 
         <div class="section-divider-line"></div>
@@ -2112,7 +1602,7 @@
         <p class="text-sm text-neutral-600 mt-3 max-w-3xl leading-relaxed">
 
             Visual summaries of the areas requiring the most attention,
-            based on transport accessibility and infrastructure priority.
+            using the population-based planning metric available.
 
         </p>
 
@@ -2134,11 +1624,11 @@
             >
 
                 <h3 class="editorial-title text-lg font-bold text-neutral-900">
-                    Accessibility Gap Score
+                    Areas That Could Be Prioritized
                 </h3>
 
                 <span class="text-xs font-mono text-neutral-500">
-                    FINAL PRIORITY METRIC
+                    TOP 5 PRIORITY AREAS
                 </span>
 
             </div>
@@ -2169,7 +1659,7 @@
                 </h3>
 
                 <span class="text-xs font-mono text-neutral-500">
-                    DISTANCE &gt; 0.30 KM
+                    POPULATION-BASED INDICATOR
                 </span>
 
             </div>
@@ -2190,7 +1680,7 @@
 
 
 <!-- ========================================================== -->
-<!-- SECTION 06 — WARD INTELLIGENCE                              -->
+<!-- SECTION 04 — WARD INTELLIGENCE                              -->
 <!-- ========================================================== -->
 
 <section
@@ -2198,19 +1688,7 @@
     class="space-y-6 scroll-mt-24"
 >
 
-    <div class="section-divider">
 
-        <span class="section-number">
-            06
-        </span>
-
-        <div class="section-divider-line"></div>
-
-        <span class="section-label">
-            Ward Intelligence
-        </span>
-
-    </div>
 
 
 
@@ -2229,7 +1707,7 @@
             </h2>
 
             <p class="text-xs text-neutral-500 mt-1">
-                Explore identified transit deserts and recommended infrastructure expansion zones.
+                Explore population-based planning priorities and areas that may require further transit analysis.
             </p>
 
         </div>
@@ -2272,11 +1750,11 @@
             >
 
                 <h3 class="editorial-title text-lg font-bold text-neutral-900">
-                    Identified Transit Deserts
+                    Ward Planning Indicators
                 </h3>
 
                 <span class="text-xs font-mono text-neutral-500">
-                    DISTANCE &gt; 0.30 KM
+                    POPULATION-BASED PLANNING INDICATOR
                 </span>
 
             </div>
@@ -2294,25 +1772,22 @@
                     data-name="{{ item.ward }} {{ item.name|lower }}"
                     data-ward="{{ item.ward }}"
                     data-location="{{ item.name }}"
-                    data-metric="{{ item.distance }} km"
-                    data-category="Transit Desert"
+                    data-metric="Planning Priority Score: {{ item.score }}"
+                    data-category="Ward Planning Indicator"
                 >
 
                     <span class="font-medium text-neutral-900">
-
-                        Ward {{ item.ward }}
-
-                        <span class="text-neutral-500 font-normal">
-                            ({{ item.name }})
+                        {{ item.name }}
+                        <span class="block text-[10px] font-mono text-neutral-500 mt-0.5">
+                            BMC Ward {{ item.ward }}
                         </span>
-
                     </span>
 
 
                     <span
                         class="font-mono font-bold text-amber-700 bg-amber-100/60 px-3 py-1 border border-amber-200"
                     >
-                        {{ item.distance }} km
+                        Priority {{ item.score }}
                     </span>
 
                 </div>
@@ -2358,25 +1833,22 @@
                     data-name="{{ item.ward }} {{ item.name|lower }}"
                     data-ward="{{ item.ward }}"
                     data-location="{{ item.name }}"
-                    data-metric="Score: {{ item.score }}"
+                    data-metric="Planning Priority Score: {{ item.score }}"
                     data-category="Priority Expansion Zone"
                 >
 
                     <div>
 
                         <span class="font-bold text-neutral-900 text-base">
-
-                            Ward {{ item.ward }}
-
-                            <span class="text-neutral-500 font-normal">
-                                ({{ item.name }})
+                            {{ item.name }}
+                            <span class="block text-[10px] font-mono text-neutral-500 mt-0.5">
+                                BMC Ward {{ item.ward }}
                             </span>
-
                         </span>
 
 
                         <span class="block text-xs text-neutral-600 mt-0.5">
-                            Distance: {{ item.distance }} km
+                            Population: {{ item.population }} · Share: {{ item.population_share }}%
                         </span>
 
                     </div>
@@ -2486,10 +1958,6 @@
 {{ {"prioritized": prioritized, "poor_access": poor_access} | tojson }}
 </script>
 
-<script id="stationGroupsData" type="application/json">
-{{ station_groups | tojson }}
-</script>
-
 <script>
 
 
@@ -2542,24 +2010,15 @@ const navLinks = document.querySelectorAll('.nav-link');
 const navSections = [
     document.getElementById('overview'),
     document.getElementById('algorithmLab'),
-    document.getElementById('routePlanner'),
-    document.getElementById('userRouteResults'),
     document.getElementById('algorithms'),
     document.getElementById('analytics'),
     document.getElementById('deserts')
 ].filter(Boolean);
 
 
-/*
-    We deliberately keep the route-results section out of the
-    navbar highlighting logic. It appears dynamically after
-    the user searches, but still belongs to the Route Planner.
-*/
-
 const navigationSections = [
     document.getElementById('overview'),
     document.getElementById('algorithmLab'),
-    document.getElementById('routePlanner'),
     document.getElementById('algorithms'),
     document.getElementById('analytics'),
     document.getElementById('deserts')
@@ -2763,7 +2222,7 @@ function initLearningMap(example, index) {
 
 
     L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png',
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
             maxZoom: 18
         }
@@ -2990,14 +2449,14 @@ if (priorityCanvas) {
                 labels:
                     prioritizedData.map(
                         item =>
-                            `Ward ${item.ward} (${item.name})`
+                            item.name || `Ward ${item.ward}`
                     ),
 
                 datasets: [
 
                     {
 
-                        label: 'Final Priority Score',
+                        label: 'Population-Based Priority Score',
 
                         data:
                             prioritizedData.map(
@@ -3057,6 +2516,9 @@ if (priorityCanvas) {
 
                     y: {
 
+                        beginAtZero: true,
+                        max: 100,
+
                         ticks: {
 
                             color: '#525252',
@@ -3098,14 +2560,14 @@ if (desertCanvas) {
         desertCanvas.getContext('2d'),
         {
 
-            type: 'doughnut',
+            type: 'bar',
 
             data: {
 
                 labels:
                     topPoor.map(
                         item =>
-                            `Ward ${item.ward} (${item.name})`
+                            item.name || item.ward
                     ),
 
                 datasets: [
@@ -3114,7 +2576,7 @@ if (desertCanvas) {
 
                         data:
                             topPoor.map(
-                                item => item.distance
+                                item => item.score
                             ),
 
                         backgroundColor: [
@@ -3138,31 +2600,32 @@ if (desertCanvas) {
 
             options: {
 
+                indexAxis: 'y',
                 responsive: true,
 
                 maintainAspectRatio: false,
 
                 plugins: {
+                    legend: { display: false }
+                },
 
-                    legend: {
-
-                        position: 'bottom',
-
-                        labels: {
-
-                            color: '#404040',
-
-                            font: {
-                                size: 11,
-                                family: 'Plus Jakarta Sans'
-                            },
-
-                            boxWidth: 14
-
-                        }
-
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            color: '#525252',
+                            font: { family: 'Plus Jakarta Sans' }
+                        },
+                        grid: { color: 'rgba(229, 231, 235, 1)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#525252',
+                            font: { size: 11, family: 'Plus Jakarta Sans' }
+                        },
+                        grid: { display: false }
                     }
-
                 }
 
             }
@@ -3171,1780 +2634,6 @@ if (desertCanvas) {
     );
 
 }
-
-
-
-/* ==========================================================
-   3. USER ROUTE PLANNER
-   ========================================================== */
-
-let userRouteMap = null;
-
-let routeLayer = null;
-
-let routeMarkers = [];
-
-
-
-
-function escapeHtml(value) {
-
-    return String(value)
-
-        .replaceAll('&', '&amp;')
-
-        .replaceAll('<', '&lt;')
-
-        .replaceAll('>', '&gt;')
-
-        .replaceAll('"', '&quot;')
-
-        .replaceAll("'", '&#039;');
-
-}
-
-
-
-function clearUserMap() {
-
-    if (!userRouteMap) {
-        return;
-    }
-
-
-    if (routeLayer) {
-
-        userRouteMap.removeLayer(
-            routeLayer
-        );
-
-        routeLayer = null;
-
-    }
-
-
-    routeMarkers.forEach(
-        marker =>
-            userRouteMap.removeLayer(marker)
-    );
-
-
-    routeMarkers = [];
-
-}
-
-
-
-function drawUserRoute(result) {
-
-    const mapElement =
-        document.getElementById('userRouteMap');
-
-
-    if (!userRouteMap) {
-
-        userRouteMap =
-            L.map(
-                mapElement,
-                {
-                    zoomControl: true,
-                    attributionControl: true,
-                    scrollWheelZoom: false
-                }
-            ).setView(
-                [19.0760, 72.8777],
-                11
-            );
-
-
-        L.tileLayer(
-            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png',
-            {
-                maxZoom: 19,
-                attribution:
-                    '&copy; OpenStreetMap contributors &copy; CARTO'
-            }
-        ).addTo(userRouteMap);
-
-    }
-
-
-    clearUserMap();
-
-
-    const points =
-        result.path_points || [];
-
-
-    if (!points.length) {
-        return;
-    }
-
-
-    const latLngs =
-        points.map(
-            point => [
-                point.lat,
-                point.lon
-            ]
-        );
-
-
-    routeLayer =
-        L.polyline(
-            latLngs,
-            {
-                color: '#059669',
-                weight: 6,
-                opacity: 0.9,
-                lineCap: 'round',
-                lineJoin: 'round'
-            }
-        ).addTo(userRouteMap);
-
-
-    const important = [
-        points[0]
-    ];
-
-
-    if (points.length > 2) {
-
-        const middleCount =
-            Math.min(
-                4,
-                points.length - 2
-            );
-
-
-        for (
-            let i = 1;
-            i <= middleCount;
-            i++
-        ) {
-
-            important.push(
-                points[
-                    Math.round(
-                        i *
-                        (points.length - 1) /
-                        (middleCount + 1)
-                    )
-                ]
-            );
-
-        }
-
-    }
-
-
-    if (points.length > 1) {
-
-        important.push(
-            points[points.length - 1]
-        );
-
-    }
-
-
-    important.forEach(
-        (point, index) => {
-
-            const isStart =
-                index === 0;
-
-            const isEnd =
-                index === important.length - 1;
-
-
-            const marker =
-                L.circleMarker(
-                    [
-                        point.lat,
-                        point.lon
-                    ],
-                    {
-
-                        radius:
-                            isStart || isEnd
-                                ? 9
-                                : 6,
-
-                        fillColor:
-                            isStart
-                                ? '#171717'
-                                : (
-                                    isEnd
-                                        ? '#dc2626'
-                                        : '#059669'
-                                ),
-
-                        color: '#fff',
-
-                        weight: 2,
-
-                        fillOpacity: 1
-
-                    }
-                ).addTo(userRouteMap);
-
-
-            marker.bindTooltip(
-                escapeHtml(point.label),
-                {
-                    permanent:
-                        isStart || isEnd,
-
-                    direction: 'top',
-
-                    offset: [0,-7]
-                }
-            );
-
-
-            routeMarkers.push(marker);
-
-        }
-    );
-
-
-    userRouteMap.fitBounds(
-        routeLayer.getBounds(),
-        {
-            padding: [45,45]
-        }
-    );
-
-
-    setTimeout(
-        () => userRouteMap.invalidateSize(),
-        100
-    );
-
-}
-
-
-
-/* ==========================================================
-   4. INDIVIDUAL ALGORITHM VISUAL MAPS
-   ========================================================== */
-
-const algorithmMapStates = {};
-
-
-const algorithmDescriptions = {
-
-    'BFS':
-        'Explores nearby connections level by level, making it easy to understand how the search spreads outward.',
-
-    'DFS':
-        'Follows one available corridor deeply before backtracking, showing how a depth-first search behaves.',
-
-    'Uniform Cost Search':
-        'Expands the lowest-distance option first, prioritizing the cheapest accumulated spatial cost.',
-
-    'Greedy Best First Search':
-        'Uses the destination as its guide and keeps choosing the option that appears closest to the goal.',
-
-    'A* Search':
-        'Combines distance already travelled with an estimate of the remaining distance to make an informed choice.'
-
-};
-
-
-
-function destroyAlgorithmMap(state) {
-
-    if (!state || !state.map) {
-        return;
-    }
-
-
-    state.map.remove();
-
-    state.map = null;
-
-    state.line = null;
-
-    state.markers = [];
-
-}
-
-
-
-function renderAlgorithmStep(
-    algorithm,
-    result
-) {
-
-    const state =
-        algorithmMapStates[algorithm];
-
-
-    if (!state || !state.map) {
-        return;
-    }
-
-
-    const points =
-        result.path_points || [];
-
-
-    const totalLegs =
-        Math.max(
-            points.length - 1,
-            0
-        );
-
-
-    if (totalLegs === 0) {
-
-        state.stepLabel.textContent =
-            'No route steps available';
-
-        state.caption.textContent =
-            'No visual route could be drawn for this algorithm.';
-
-        return;
-
-    }
-
-
-    const legIndex =
-        Math.min(
-            state.step,
-            totalLegs - 1
-        );
-
-
-    const from =
-        points[legIndex];
-
-
-    const to =
-        points[legIndex + 1];
-
-
-    if (state.line) {
-
-        state.map.removeLayer(
-            state.line
-        );
-
-    }
-
-
-    state.markers.forEach(
-        marker =>
-            state.map.removeLayer(marker)
-    );
-
-
-    state.markers = [];
-
-
-    const fromLatLng = [
-        from.lat,
-        from.lon
-    ];
-
-
-    const toLatLng = [
-        to.lat,
-        to.lon
-    ];
-
-
-    state.line =
-        L.polyline(
-            [
-                fromLatLng,
-                toLatLng
-            ],
-            {
-                color: '#059669',
-                weight: 6,
-                opacity: 0.9,
-                lineCap: 'round',
-                lineJoin: 'round'
-            }
-        ).addTo(state.map);
-
-
-    const fromMarker =
-        L.circleMarker(
-            fromLatLng,
-            {
-                radius: 8,
-                fillColor: '#171717',
-                color: '#ffffff',
-                weight: 2,
-                fillOpacity: 1
-            }
-        ).addTo(state.map);
-
-
-    fromMarker.bindTooltip(
-        escapeHtml(from.label),
-        {
-            permanent: true,
-            direction: 'top',
-            offset: [0,-7]
-        }
-    );
-
-
-    const toMarker =
-        L.circleMarker(
-            toLatLng,
-            {
-                radius: 8,
-                fillColor: '#059669',
-                color: '#ffffff',
-                weight: 2,
-                fillOpacity: 1
-            }
-        ).addTo(state.map);
-
-
-    toMarker.bindTooltip(
-        escapeHtml(to.label),
-        {
-            permanent: true,
-            direction: 'top',
-            offset: [0,-7]
-        }
-    );
-
-
-    state.markers.push(
-        fromMarker,
-        toMarker
-    );
-
-
-    state.map.fitBounds(
-        state.line.getBounds(),
-        {
-            padding: [45,45]
-        }
-    );
-
-
-    state.stepLabel.textContent =
-        `Step ${legIndex + 1} of ${totalLegs}`;
-
-
-    state.caption.textContent =
-        `The ${algorithm} algorithm is moving from ${from.label} to ${to.label}. ` +
-        `${algorithmDescriptions[algorithm] || ''}`;
-
-
-    state.nextButton.textContent =
-        legIndex >= totalLegs - 1
-            ? 'Restart Route'
-            : 'Next Step →';
-
-}
-
-
-
-function initializeAlgorithmMap(
-    algorithm,
-    result,
-    index
-) {
-
-    const mapElement =
-        document.getElementById(
-            `algorithm-map-${index}`
-        );
-
-
-    if (!mapElement) {
-        return;
-    }
-
-
-    if (
-        algorithmMapStates[algorithm] &&
-        algorithmMapStates[algorithm].map
-    ) {
-
-        setTimeout(
-            () =>
-                algorithmMapStates[
-                    algorithm
-                ].map.invalidateSize(),
-            100
-        );
-
-
-        renderAlgorithmStep(
-            algorithm,
-            result
-        );
-
-
-        return;
-
-    }
-
-
-    const state =
-        algorithmMapStates[algorithm] = {
-
-            map: null,
-
-            line: null,
-
-            markers: [],
-
-            step: 0,
-
-            stepLabel:
-                document.getElementById(
-                    `algorithm-step-${index}`
-                ),
-
-            caption:
-                document.getElementById(
-                    `algorithm-caption-${index}`
-                ),
-
-            nextButton:
-                document.getElementById(
-                    `algorithm-next-${index}`
-                )
-
-        };
-
-
-    state.map =
-        L.map(
-            mapElement,
-            {
-                zoomControl: false,
-                attributionControl: false,
-                dragging: true,
-                scrollWheelZoom: false
-            }
-        ).setView(
-            [19.0760, 72.8777],
-            11
-        );
-
-
-    L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{@2x}.png',
-        {
-            maxZoom: 19
-        }
-    ).addTo(state.map);
-
-
-    state.nextButton.addEventListener(
-        'click',
-        () => {
-
-            const totalLegs =
-                Math.max(
-                    (result.path_points || []).length - 1,
-                    0
-                );
-
-
-            if (totalLegs === 0) {
-                return;
-            }
-
-
-            state.step =
-                state.step >= totalLegs - 1
-                    ? 0
-                    : state.step + 1;
-
-
-            renderAlgorithmStep(
-                algorithm,
-                result
-            );
-
-        }
-    );
-
-
-    setTimeout(
-        () => {
-
-            state.map.invalidateSize();
-
-            renderAlgorithmStep(
-                algorithm,
-                result
-            );
-
-        },
-        100
-    );
-
-}
-
-
-
-/* ==========================================================
-   5. ROUTE HELPERS
-   ========================================================== */
-
-function compactRouteNames(result) {
-
-    const points =
-        result.path_points || [];
-
-
-    if (!points.length) {
-        return result.route_names || [];
-    }
-
-
-    const labels =
-        points
-            .map(p => p.label)
-            .filter(Boolean);
-
-
-    // Show every stop for normal routes so the user can verify the journey.
-    if (labels.length <= 12) {
-        return labels;
-    }
-
-
-    const picked = [
-        labels[0]
-    ];
-
-
-    const middle =
-        Math.min(
-            4,
-            labels.length - 2
-        );
-
-
-    for (
-        let i = 1;
-        i <= middle;
-        i++
-    ) {
-
-        picked.push(
-            labels[
-                Math.round(
-                    i *
-                    (labels.length - 1) /
-                    (middle + 1)
-                )
-            ]
-        );
-
-    }
-
-
-    picked.push(
-        labels[labels.length - 1]
-    );
-
-
-    return [
-        ...new Set(picked)
-    ];
-
-}
-
-
-
-function renderModeBadges(routeType) {
-
-    if (!routeType) {
-        return '';
-    }
-
-
-    const modes =
-        routeType.modes || [];
-
-
-    if (!modes.length) {
-
-        return `
-            <span class="mode-badge">
-                🛣️ Transit
-            </span>
-        `;
-
-    }
-
-
-    return modes.map(
-        mode => {
-
-            const cls =
-                mode === 'Local Train'
-                    ? 'local'
-                    : mode === 'Metro'
-                        ? 'metro'
-                        : mode === 'Monorail'
-                            ? 'mono'
-                            : mode === 'Bus'
-                                ? 'bus'
-                                : 'mixed';
-
-
-            const icon =
-                mode === 'Local Train'
-                    ? '🚆'
-                    : mode === 'Metro'
-                        ? '🚇'
-                        : mode === 'Monorail'
-                            ? '🚝'
-                            : mode === 'Bus'
-                                ? '🚌'
-                                : '🛣️';
-
-
-            return `
-                <span class="mode-badge ${cls}">
-                    ${icon} ${escapeHtml(mode)}
-                </span>
-            `;
-
-        }
-    ).join('');
-
-}
-
-
-
-/* ==========================================================
-   6. DISPLAY ROUTE RESULTS
-   ========================================================== */
-
-function getFriendlyAlgorithmTitle(algorithm) {
-    const titles = {
-        'BFS': 'Checks nearby choices first',
-        'DFS': 'Follows one path deeply before trying another',
-        'Uniform Cost Search': 'Keeps choosing the cheapest route so far',
-        'Greedy Best First Search': 'Heads toward what looks closest to the destination',
-        'A* Search': 'Balances distance travelled with distance still remaining'
-    };
-    return titles[algorithm] || 'Searches the transport network for a route';
-}
-
-function getFriendlyAlgorithmSteps(algorithm, result) {
-    const points = result.path_points || [];
-    const start = escapeHtml(points[0]?.label || 'your starting point');
-    const end = escapeHtml(points[points.length - 1]?.label || 'your destination');
-    const steps = {
-        'BFS': [
-            ['1', `🏁 Starts at ${start}.`],
-            ['2', '🔎 Checks nearby locations before moving farther away.'],
-            ['3', '📚 Expands the journey layer by layer, like ripples in water.'],
-            ['4', `🎯 Stops when it reaches ${end}.`]
-        ],
-        'DFS': [
-            ['1', `🏁 Starts at ${start}.`],
-            ['2', '🧭 Picks one available path and keeps following it.'],
-            ['3', '↩️ If that path does not work, it goes back and tries another.'],
-            ['4', `🎯 Eventually reaches ${end}, but the first route found may not be the shortest.`]
-        ],
-        'Uniform Cost Search': [
-            ['1', `🏁 Starts at ${start} with zero travel cost.`],
-            ['2', '💰 Looks at the total distance travelled on each possible route.'],
-            ['3', '🏷️ Always explores the cheapest route currently available.'],
-            ['4', `🎯 Reaches ${end} using the lowest-cost path.`]
-        ],
-        'Greedy Best First Search': [
-            ['1', `🏁 Starts at ${start}.`],
-            ['2', '🎯 Looks at which option appears closest to the destination.'],
-            ['3', '➡️ Keeps chasing the destination instead of focusing on cost already spent.'],
-            ['4', `🏁 Reaches ${end}; this can be quick, but the route is not always the best overall.`]
-        ],
-        'A* Search': [
-            ['1', `🏁 Starts at ${start}.`],
-            ['2', '📏 Measures the distance already travelled.'],
-            ['3', '🔭 Estimates how far the destination still is.'],
-            ['4', `⚖️ Combines both ideas to choose a promising route toward ${end}.`]
-        ]
-    };
-    const selected = steps[algorithm] || steps['A* Search'];
-    let html = selected.map(item => `
-        <div class="friendly-algo-step">
-            <span class="friendly-algo-icon">${item[0]}</span>
-            <p class="text-[10px] text-neutral-700 leading-relaxed pt-1">${item[1]}</p>
-        </div>
-    `).join('');
-    if (algorithm === 'A* Search') html += `<div class="friendly-algo-formula mt-1"><strong>Simple rule:</strong> f(n) = distance already travelled + estimated distance remaining</div>`;
-    if (algorithm === 'Uniform Cost Search') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Which available journey has cost me the least so far?”</strong></div>`;
-    if (algorithm === 'BFS') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Check the closest layer first, then the next layer.”</strong></div>`;
-    if (algorithm === 'DFS') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Try this road fully before coming back.”</strong></div>`;
-    if (algorithm === 'Greedy Best First Search') html += `<div class="friendly-algo-choice mt-1 text-[10px] text-neutral-600 leading-relaxed">Think of it as: <strong>“Which choice looks closest to my destination right now?”</strong></div>`;
-    return html;
-}
-
-
-function displayUserRouteResults(data) {
-
-    const resultsSection =
-        document.getElementById(
-            'userRouteResults'
-        );
-
-
-    document.getElementById(
-        'routeTitle'
-    ).textContent =
-        `${data.start} → ${data.destination}`;
-
-
-    document.getElementById(
-        'routeObjectiveText'
-    ).textContent =
-        'Balanced Route';
-
-
-
-    const bestResultForSummary =
-        data.recommended_result;
-
-    if (!bestResultForSummary) {
-        resultsContainer.innerHTML = `
-            <div class="text-sm text-neutral-500 p-4">
-                No recommendation is available for this route.
-            </div>
-        `;
-        resultsSection.classList.remove('hidden');
-        return;
-    }
-
-
-    const routeType =
-        bestResultForSummary.route_type
-        || {
-            title: 'Transit Route',
-            icon: '🛣️',
-            modes: [],
-            lines: [],
-            is_mixed: false
-        };
-
-
-    const routeBadge =
-        document.getElementById(
-            'routeTypeBadge'
-        );
-
-
-    const routeTypeClass =
-        routeType.modes.length === 1
-            ? (
-                routeType.modes[0] === 'Local Train'
-                    ? 'local'
-                    : routeType.modes[0] === 'Metro'
-                        ? 'metro'
-                        : routeType.modes[0] === 'Monorail'
-                            ? 'mono'
-                            : routeType.modes[0] === 'Bus'
-                                ? 'bus'
-                                : ''
-            )
-            : 'mixed';
-
-
-    routeBadge.className =
-        `mode-badge ${routeTypeClass}`;
-
-
-    routeBadge.textContent =
-        `${routeType.icon} ${routeType.title}`;
-
-
-    document.getElementById(
-        'routeTypeLine'
-    ).textContent =
-        routeType.lines.length
-            ? routeType.lines.join(' • ')
-            : (
-                routeType.modes.join(' • ')
-                || 'Transit network'
-            );
-
-
-    document.getElementById(
-        'routeTypeExplanation'
-    ).textContent =
-        routeType.is_mixed
-            ? 'This journey uses more than one transport type or requires a transfer.'
-            : `This recommended route primarily uses ${
-                routeType.modes[0]
-                || 'the transit network'
-            }.`;
-
-
-
-    /* Show results */
-
-    resultsSection.classList.remove(
-        'hidden'
-    );
-
-
-
-    /* Best result */
-
-    const bestResult =
-        data.recommended_result;
-
-    if (!bestResult) {
-        return;
-    }
-
-
-    const recommendedType =
-        bestResult.route_type
-        || routeType;
-
-
-    document.getElementById(
-        'recommendedRoute'
-    ).textContent =
-        `${
-            recommendedType.icon
-            || '🛣️'
-        } ${
-            recommendedType.title
-            || 'Transit Route'
-        }`;
-
-
-    document.getElementById(
-        'recommendedMode'
-    ).textContent =
-        recommendedType.lines &&
-        recommendedType.lines.length
-            ? recommendedType.lines.join(' • ')
-            : (
-                recommendedType.modes.join(' • ')
-                || 'Transit network'
-            );
-
-
-    document.getElementById(
-        'recommendedDistance'
-    ).textContent =
-        `${bestResult.path_cost} km`;
-
-
-    document.getElementById(
-        'recommendedStops'
-    ).textContent =
-        bestResult.stops;
-
-
-
-    /* Journey timeline */
-
-    const routeSteps =
-        document.getElementById(
-            'recommendedRouteSteps'
-        );
-
-
-    const routeModeBox =
-        document.getElementById(
-            'recommendedRouteMode'
-        );
-
-
-    const journeyPoints =
-        bestResult.path_points || [];
-
-
-    const fallbackType =
-        bestResult.route_type
-        || routeType;
-
-
-    routeModeBox.innerHTML = `
-
-        <div class="flex flex-wrap items-center gap-2">
-
-            ${renderModeBadges(fallbackType)}
-
-            <span class="text-[10px] text-neutral-500 font-medium">
-
-                ${
-                    fallbackType.is_mixed
-                        ? 'Transfers may be required'
-                        : 'Primary transport mode'
-                }
-
-            </span>
-
-        </div>
-
-    `;
-
-
-
-    if (!journeyPoints.length) {
-
-        routeSteps.innerHTML =
-            `
-                <div class="text-xs text-neutral-500">
-                    No route stops available.
-                </div>
-            `;
-
-    } else {
-
-        const fallbackMode =
-            (
-                fallbackType.modes &&
-                fallbackType.modes[0]
-            )
-            || 'Transit';
-
-
-        routeSteps.innerHTML =
-            journeyPoints
-                .map(
-                    (point, i) => {
-
-                        const isStart =
-                            i === 0;
-
-
-                        const isEnd =
-                            i === journeyPoints.length - 1;
-
-
-                        const pointMode =
-                            point.mode
-                            || fallbackMode;
-
-
-                        const pointLine =
-                            point.line
-                            || '';
-
-
-                        const pointType = {
-
-                            modes: [
-                                pointMode
-                            ],
-
-                            lines:
-                                pointLine
-                                    ? [pointLine]
-                                    : [],
-
-                            is_mixed: false
-
-                        };
-
-
-                        return `
-
-                            <div
-                                class="journey-stop ${
-                                    isStart
-                                        ? 'start'
-                                        : ''
-                                } ${
-                                    isEnd
-                                        ? 'end'
-                                        : ''
-                                }"
-                            >
-
-                                <div class="journey-dot">
-
-                                    ${
-                                        isStart
-                                            ? 'S'
-                                            : isEnd
-                                                ? 'D'
-                                                : i
-                                    }
-
-                                </div>
-
-
-                                <div class="journey-stop-content">
-
-                                    <div class="journey-stop-name">
-
-                                        ${escapeHtml(
-                                            point.label
-                                            || point.name
-                                            || 'Unnamed stop'
-                                        )}
-
-                                    </div>
-
-
-                                    <div class="journey-stop-meta">
-
-                                        ${renderModeBadges(pointType)}
-
-                                        ${
-                                            pointLine
-                                                ? `
-                                                    <span class="text-[9px] text-neutral-500 font-mono">
-                                                        ${escapeHtml(pointLine)}
-                                                    </span>
-                                                  `
-                                                : ''
-                                        }
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-                            ${
-                                !isEnd
-                                    ? `
-                                        <div class="journey-direction">
-                                            ↓ NEXT STOP
-                                        </div>
-                                      `
-                                    : ''
-                            }
-
-                        `;
-
-                    }
-                )
-                .join('');
-
-    }
-
-
-    drawUserRoute(bestResult);
-
-}
-
-
-
-/* ==========================================================
-   7. SEARCHABLE TRANSPORT LOCATION PICKERS
-   ========================================================== */
-
-const stationGroups =
-    JSON.parse(document.getElementById('stationGroupsData').textContent);
-
-
-const stationCatalog = [];
-
-
-Object.entries(
-    stationGroups || {}
-).forEach(
-    ([mode, items]) => {
-
-        (items || []).forEach(
-            item => {
-
-                stationCatalog.push({
-
-                    name:
-                        String(
-                            item.name || ''
-                        ).trim(),
-
-                    line:
-                        String(
-                            item.line || ''
-                        ).trim(),
-
-                    mode:
-                        mode
-
-                });
-
-            }
-        );
-
-    }
-);
-
-
-
-const modeInfo = {
-
-    'Local Train': {
-        icon: '🚆',
-        short: 'Local Train'
-    },
-
-    'Metro': {
-        icon: '🚇',
-        short: 'Metro'
-    },
-
-    'Monorail': {
-        icon: '🚝',
-        short: 'Monorail'
-    },
-
-    'Bus': {
-        icon: '🚌',
-        short: 'Bus'
-    },
-
-    'Other Transit': {
-        icon: '📍',
-        short: 'Other Transit'
-    }
-
-};
-
-
-
-function setupStationPicker(picker) {
-
-    const input =
-        picker.querySelector(
-            '.station-search'
-        );
-
-
-    const menu =
-        picker.querySelector(
-            '.station-menu'
-        );
-
-
-    const results =
-        picker.querySelector(
-            '.station-results'
-        );
-
-
-    const clear =
-        picker.querySelector(
-            '.station-clear'
-        );
-
-
-    let selectedMode =
-        'all';
-
-
-
-    function renderResults() {
-
-        const query =
-            input.value
-                .trim()
-                .toLowerCase();
-
-
-        const matches =
-            stationCatalog.filter(
-                item => {
-
-                    const modeMatch =
-                        selectedMode === 'all'
-                        || item.mode === selectedMode;
-
-
-                    const text =
-                        `${item.name} ${item.line} ${item.mode}`
-                            .toLowerCase();
-
-
-                    return (
-                        modeMatch &&
-                        (
-                            !query ||
-                            text.includes(query)
-                        )
-                    );
-
-                }
-            );
-
-
-        const limit =
-            query
-                ? 80
-                : 40;
-
-
-        results.innerHTML = '';
-
-
-        if (!matches.length) {
-
-            results.innerHTML =
-                `
-                    <div class="station-empty">
-
-                        No matching locations.
-
-                        <br>
-
-                        <span class="text-[10px]">
-                            Try another spelling or category.
-                        </span>
-
-                    </div>
-                `;
-
-            return;
-
-        }
-
-
-        matches
-            .slice(0, limit)
-            .forEach(
-                item => {
-
-                    const info =
-                        modeInfo[item.mode]
-                        || modeInfo['Other Transit'];
-
-
-                    const button =
-                        document.createElement('button');
-
-
-                    button.type =
-                        'button';
-
-
-                    button.className =
-                        'station-result';
-
-
-                    button.innerHTML = `
-
-                        <div class="station-result-name">
-
-                            ${escapeHtml(
-                                item.name
-                            )}
-
-                        </div>
-
-
-                        <div class="station-result-meta">
-
-                            <span class="station-result-mode">
-
-                                ${info.icon}
-                                ${escapeHtml(info.short)}
-
-                            </span>
-
-
-                            ${
-                                item.line &&
-                                item.line.toLowerCase() !== 'nan'
-                                    ? `
-                                        <span>
-                                            ${escapeHtml(item.line)}
-                                        </span>
-                                      `
-                                    : ''
-                            }
-
-                        </div>
-
-                    `;
-
-
-                    button.addEventListener(
-                        'click',
-                        () => {
-
-                            input.value =
-                                item.name;
-
-
-                            input.dataset.mode =
-                                item.mode;
-
-
-                            input.dataset.line =
-                                item.line || '';
-
-
-                            clear.classList.remove(
-                                'hidden'
-                            );
-
-
-                            menu.classList.add(
-                                'hidden'
-                            );
-
-                        }
-                    );
-
-
-                    results.appendChild(
-                        button
-                    );
-
-                }
-            );
-
-
-        if (matches.length > limit) {
-
-            const more =
-                document.createElement('div');
-
-
-            more.className =
-                'px-3 py-2 text-[10px] text-neutral-500 bg-neutral-950';
-
-
-            more.textContent =
-                `Showing ${limit} of ${matches.length} matches — type more to narrow it down.`;
-
-
-            results.appendChild(
-                more
-            );
-
-        }
-
-    }
-
-
-
-    input.addEventListener(
-        'focus',
-        () => {
-
-            menu.classList.remove(
-                'hidden'
-            );
-
-            renderResults();
-
-        }
-    );
-
-
-    input.addEventListener(
-        'input',
-        () => {
-
-            delete input.dataset.mode;
-
-            delete input.dataset.line;
-
-
-            clear.classList.toggle(
-                'hidden',
-                !input.value
-            );
-
-
-            menu.classList.remove(
-                'hidden'
-            );
-
-
-            renderResults();
-
-        }
-    );
-
-
-    clear.addEventListener(
-        'click',
-        () => {
-
-            input.value = '';
-
-            delete input.dataset.mode;
-
-            delete input.dataset.line;
-
-
-            clear.classList.add(
-                'hidden'
-            );
-
-
-            input.focus();
-
-            renderResults();
-
-        }
-    );
-
-
-    picker
-        .querySelectorAll('.station-mode')
-        .forEach(
-            tab => {
-
-                tab.addEventListener(
-                    'click',
-                    () => {
-
-                        selectedMode =
-                            tab.dataset.mode;
-
-
-                        picker
-                            .querySelectorAll(
-                                '.station-mode'
-                            )
-                            .forEach(
-                                t =>
-                                    t.classList.remove(
-                                        'active'
-                                    )
-                            );
-
-
-                        tab.classList.add(
-                            'active'
-                        );
-
-
-                        menu.classList.remove(
-                            'hidden'
-                        );
-
-
-                        renderResults();
-
-                    }
-                );
-
-            }
-        );
-
-}
-
-
-
-document
-    .querySelectorAll(
-        '.station-picker'
-    )
-    .forEach(
-        setupStationPicker
-    );
-
-
-
-/* ==========================================================
-   9. FIND ROUTE
-   ========================================================== */
-
-document
-    .getElementById(
-        'findRouteBtn'
-    )
-    .addEventListener(
-        'click',
-        async () => {
-
-            const start =
-                document
-                    .getElementById(
-                        'startStation'
-                    )
-                    .value
-                    .trim();
-
-
-            const destination =
-                document
-                    .getElementById(
-                        'destinationStation'
-                    )
-                    .value
-                    .trim();
-
-
-
-
-            const status =
-                document.getElementById(
-                    'routeStatus'
-                );
-
-
-
-            if (!start || !destination) {
-
-                status.textContent =
-                    'Please select both a starting location and destination.';
-
-
-                status.classList.remove(
-                    'hidden'
-                );
-
-
-                return;
-
-            }
-
-
-
-            if (
-                start.toLowerCase() ===
-                destination.toLowerCase()
-            ) {
-
-                status.textContent =
-                    'Starting location and destination must be different.';
-
-
-                status.classList.remove(
-                    'hidden'
-                );
-
-
-                return;
-
-            }
-
-
-
-            status.textContent =
-                'Running BFS, DFS, UCS, Greedy Best First and A*...';
-
-
-            status.classList.remove(
-                'hidden'
-            );
-
-
-            const button =
-                document.getElementById(
-                    'findRouteBtn'
-                );
-
-
-            button.disabled = true;
-
-
-            button.classList.add(
-                'opacity-60',
-                'cursor-not-allowed'
-            );
-
-
-
-            try {
-
-                const response =
-                    await fetch(
-                        '/find-route',
-                        {
-
-                            method: 'POST',
-
-                            headers: {
-                                'Content-Type':
-                                    'application/json'
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    {
-                                        start:
-                                            start,
-
-                                        destination:
-                                            destination
-                                    }
-                                )
-
-                        }
-                    );
-
-
-                const data =
-                    await response.json();
-
-
-                if (!response.ok) {
-
-                    throw new Error(
-                        data.error
-                        || 'Unable to calculate the route.'
-                    );
-
-                }
-
-
-                displayUserRouteResults(
-                    data
-                );
-
-
-                status.textContent =
-                    `Route calculated successfully: ${data.start} → ${data.destination}`;
-
-
-                document
-                    .getElementById(
-                        'userRouteResults'
-                    )
-                    .scrollIntoView(
-                        {
-                            behavior: 'smooth',
-                            block: 'start'
-                        }
-                    );
-
-            }
-
-
-            catch (error) {
-
-                console.error(error);
-
-
-                status.textContent =
-                    error.message
-                    || 'Something went wrong while calculating the route.';
-
-            }
-
-
-            finally {
-
-                button.disabled = false;
-
-
-                button.classList.remove(
-                    'opacity-60',
-                    'cursor-not-allowed'
-                );
-
-            }
-
-        }
-    );
 
 
 
@@ -5122,137 +2811,67 @@ document
    12. CSV EXPORT
    ========================================================== */
 
-document
-    .getElementById(
-        'exportCsvBtn'
-    )
-    .addEventListener(
-        'click',
-        () => {
+const exportCsvBtn = document.getElementById('exportCsvBtn');
 
-            let csvContent =
-                'Ward,Name,Metric\n';
+function csvCell(value) {
+    const text = value === null || value === undefined ? '' : String(value);
+    return `"${text.replaceAll('"', '""')}"`;
+}
 
+if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', () => {
+        const rows = [
+            ['Category', 'Ward', 'Ward Area', 'Population', 'Population Share (%)', 'Planning Priority Score', 'Analysis Status']
+        ];
 
-            prioritizedData.forEach(
-                item => {
+        (poorAccessData || []).forEach(item => {
+            rows.push([
+                'Ward Planning Indicator',
+                item.ward ?? '',
+                item.name ?? '',
+                item.population ?? '',
+                item.population_share ?? '',
+                item.score ?? '',
+                item.analysis_status ?? ''
+            ]);
+        });
 
-                    csvContent +=
-                        `"${item.ward}","${
-                            String(item.name)
-                                .replaceAll('"', '""')
-                        }","Score: ${item.score}"\n`;
+        const priorityWards = new Set((poorAccessData || []).map(item => item.ward));
 
-                }
-            );
+        (prioritizedData || []).forEach(item => {
+            if (!priorityWards.has(item.ward)) {
+                rows.push([
+                    'Priority Expansion Zone',
+                    item.ward ?? '',
+                    item.name ?? '',
+                    item.population ?? '',
+                    item.population_share ?? '',
+                    item.score ?? '',
+                    item.analysis_status ?? ''
+                ]);
+            }
+        });
 
+        const csvContent = rows
+            .map(row => row.map(csvCell).join(','))
+            .join('\r\n');
 
-            poorAccessData.forEach(
-                item => {
+        const blob = new Blob(
+            ['\uFEFF', csvContent],
+            { type: 'text/csv;charset=utf-8;' }
+        );
 
-                    csvContent +=
-                        `"${item.ward}","${
-                            String(item.name)
-                                .replaceAll('"', '""')
-                        }","Distance: ${item.distance} km"\n`;
-
-                }
-            );
-
-
-            const blob =
-                new Blob(
-                    [csvContent],
-                    {
-                        type:
-                            'text/csv;charset=utf-8;'
-                    }
-                );
-
-
-            const url =
-                URL.createObjectURL(
-                    blob
-                );
-
-
-            const link =
-                document.createElement(
-                    'a'
-                );
-
-
-            link.href =
-                url;
-
-
-            link.download =
-                'mumbai_transit_intelligence.csv';
-
-
-            document.body.appendChild(
-                link
-            );
-
-
-            link.click();
-
-
-            link.remove();
-
-
-            URL.revokeObjectURL(
-                url
-            );
-
-        }
-    );
-
-
-
-/* ==========================================================
-   13. CLOSE STATION MENUS WHEN CLICKING OUTSIDE
-   ========================================================== */
-
-document.addEventListener(
-    'click',
-    event => {
-
-        document
-            .querySelectorAll(
-                '.station-picker'
-            )
-            .forEach(
-                picker => {
-
-                    if (
-                        !picker.contains(
-                            event.target
-                        )
-                    ) {
-
-                        const menu =
-                            picker.querySelector(
-                                '.station-menu'
-                            );
-
-
-                        if (menu) {
-
-                            menu.classList.add(
-                                'hidden'
-                            );
-
-                        }
-
-                    }
-
-                }
-            );
-
-    }
-);
-
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'mumbai_transit_intelligence.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    });
+}
 
 
 /* ==========================================================
