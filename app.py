@@ -15,33 +15,27 @@ from difflib import SequenceMatcher
 app = Flask(__name__)
 
 # ============================================================
-# FAST STARTUP CACHE
+# OFFICIAL DATA / CACHE CONFIGURATION
 # ============================================================
-# Cache the fully processed application state so CSV parsing, graph
-# construction, benchmarking and accessibility analysis happen only
-# when the code or source datasets actually change.
-
-CACHE_VERSION = 11
+CACHE_VERSION = 23
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
-PROCESSED_CACHE_PATH = os.path.join(
-    DATA_DIR,
-    'processed_app_cache.pkl'
-)
-
-# Small in-memory route cache.
-# Repeated searches become essentially instant while memory stays bounded.
+PROCESSED_CACHE_PATH = os.path.join(DATA_DIR, 'processed_official_cache.pkl')
 ROUTE_CACHE_MAX_SIZE = 1024
 _route_cache = OrderedDict()
 
+OFFICIAL_FILES = {
+    'wards': 'bmc_ward_population.csv',
+    'stations': 'mumbai_local_train_stations_ALL_OFFICIAL.csv',
+    'services': 'mumbai_local_train_services_ALL_OFFICIAL.csv',
+    'stop_times': 'mumbai_local_train_stop_times_ALL_OFFICIAL.csv',
+    'best_routes': 'best_official_verified_routes.csv',
+    'best_summary': 'best_official_network_summary.csv',
+}
 
 def _file_signature(path):
     stat = os.stat(path)
-    return {
-        'size': stat.st_size,
-        'mtime_ns': stat.st_mtime_ns
-    }
-
+    return {'size': stat.st_size, 'mtime_ns': stat.st_mtime_ns}
 
 def _source_signature():
     try:
@@ -50,80 +44,39 @@ def _source_signature():
     except OSError:
         return None
 
-
-def _cache_metadata(wards_path, transit_path, gtfs_stops_path, gtfs_sequences_path):
+def _cache_metadata(paths):
     return {
         'cache_version': CACHE_VERSION,
         'source_hash': _source_signature(),
-        'wards': _file_signature(wards_path),
-        'transit': _file_signature(transit_path),
-        'gtfs_stops': _file_signature(gtfs_stops_path),
-        'gtfs_sequences': _file_signature(gtfs_sequences_path)
+        'files': {key: _file_signature(path) for key, path in paths.items()}
     }
 
-
-def _load_processed_cache(wards_path, transit_path, gtfs_stops_path, gtfs_sequences_path):
+def _load_processed_cache(paths):
     if not os.path.exists(PROCESSED_CACHE_PATH):
         return None
-
     try:
         with open(PROCESSED_CACHE_PATH, 'rb') as f:
             payload = pickle.load(f)
-
-        if payload.get('metadata') != _cache_metadata(
-            wards_path,
-            transit_path,
-            gtfs_stops_path,
-            gtfs_sequences_path
-        ):
-            print('Processed cache is outdated; rebuilding data...')
+        if payload.get('metadata') != _cache_metadata(paths):
             return None
-
         data = payload.get('data')
-        if not isinstance(data, tuple) or len(data) != 10:
-            print('Processed cache format is invalid; rebuilding data...')
+        if not isinstance(data, tuple) or len(data) != 12:
             return None
-
-        print('Loaded processed data from cache.')
+        print('Loaded official processed data from cache.')
         return data
-
     except Exception as exc:
-        print(
-            f'Could not load processed cache ({exc}); rebuilding data...'
-        )
+        print(f'Could not load official cache ({exc}); rebuilding...')
         return None
 
-
-def _save_processed_cache(data, wards_path, transit_path, gtfs_stops_path, gtfs_sequences_path):
+def _save_processed_cache(data, paths):
     os.makedirs(DATA_DIR, exist_ok=True)
-
-    payload = {
-        'metadata': _cache_metadata(
-            wards_path,
-            transit_path,
-            gtfs_stops_path,
-            gtfs_sequences_path
-        ),
-        'data': data
-    }
-
+    payload = {'metadata': _cache_metadata(paths), 'data': data}
     temp_path = PROCESSED_CACHE_PATH + '.tmp'
-
     try:
         with open(temp_path, 'wb') as f:
-            pickle.dump(
-                payload,
-                f,
-                protocol=pickle.HIGHEST_PROTOCOL
-            )
-
-        os.replace(
-            temp_path,
-            PROCESSED_CACHE_PATH
-        )
-
-        print('Saved processed data cache.')
-
+            pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(temp_path, PROCESSED_CACHE_PATH)
+        print('Saved official processed data cache.')
     except Exception as exc:
         print(f'Could not save processed cache: {exc}')
         try:
@@ -131,7 +84,6 @@ def _save_processed_cache(data, wards_path, transit_path, gtfs_stops_path, gtfs_
                 os.remove(temp_path)
         except OSError:
             pass
-
 
 # ============================================================
 # 1. BASIC DISTANCE HELPERS
@@ -291,34 +243,54 @@ def uniform_cost_search(graph, start, goals, nodes):
 
 
 
+def _topology_heuristic_factory(graph, goals):
+    """Build a data-derived heuristic without geographic coordinates.
+
+    h(n) = minimum number of remaining edges * minimum observed edge cost.
+    Every edge costs at least the minimum edge cost, so this is admissible
+    for A* and uses only the official timetable graph.
+    """
+    goals = set(goals)
+    reverse = {node: [] for node in graph}
+    min_edge_cost = float('inf')
+
+    for node, edges in graph.items():
+        for neighbour, cost in edges:
+            reverse.setdefault(neighbour, []).append(node)
+            if cost > 0:
+                min_edge_cost = min(min_edge_cost, float(cost))
+
+    if not np.isfinite(min_edge_cost):
+        min_edge_cost = 0.0
+
+    hop_distance = {}
+    queue = deque()
+
+    for goal in goals:
+        hop_distance[goal] = 0
+        queue.append(goal)
+
+    while queue:
+        current = queue.popleft()
+        for previous in reverse.get(current, ()):
+            if previous not in hop_distance:
+                hop_distance[previous] = hop_distance[current] + 1
+                queue.append(previous)
+
+    def heuristic(node):
+        hops = hop_distance.get(node)
+        if hops is None:
+            return 0.0
+        return float(hops * min_edge_cost)
+
+    return heuristic
+
+
 def greedy_best_first_search(graph, start, goals, nodes):
-    """Greedy best-first search with cached geometry and parent pointers."""
-    goals = tuple(goals)
-
-    if len(goals) == 1:
-        goal = goals[0]
-
-        def heuristic(node):
-            return euclidean_distance(node, goal, nodes)
-    else:
-        heuristic_cache = {}
-
-        def heuristic(node):
-            cached = heuristic_cache.get(node)
-            if cached is not None:
-                return cached
-
-            value = min(
-                euclidean_distance(node, goal, nodes)
-                for goal in goals
-            )
-            heuristic_cache[node] = value
-            return value
-
+    """Greedy search using a topology-derived remaining-time estimate."""
+    heuristic = _topology_heuristic_factory(graph, goals)
     counter = 0
-    priority_queue = [
-        (heuristic(start), counter, start, 0.0)
-    ]
+    priority_queue = [(heuristic(start), counter, start, 0.0)]
     parent = {start: None}
     parent_cost = {}
     visited = set()
@@ -326,7 +298,6 @@ def greedy_best_first_search(graph, start, goals, nodes):
 
     while priority_queue:
         _, _, current, cost = heapq.heappop(priority_queue)
-
         if current in visited:
             continue
 
@@ -340,62 +311,29 @@ def greedy_best_first_search(graph, start, goals, nodes):
         for neighbour, edge_cost in graph.get(current, ()):
             if neighbour in visited:
                 continue
-
             parent[neighbour] = current
             parent_cost[neighbour] = edge_cost
             counter += 1
-
             heapq.heappush(
                 priority_queue,
-                (
-                    heuristic(neighbour),
-                    counter,
-                    neighbour,
-                    cost + edge_cost
-                )
+                (heuristic(neighbour), counter, neighbour, cost + edge_cost)
             )
 
     return None, float('inf'), expanded
 
 
-
 def a_star_search(graph, start, goals, nodes):
-    """A* with O(V) parent storage and a single-goal fast heuristic path."""
-    goals = tuple(goals)
-
-    if len(goals) == 1:
-        goal = goals[0]
-
-        def heuristic(node):
-            return euclidean_distance(node, goal, nodes)
-    else:
-        heuristic_cache = {}
-
-        def heuristic(node):
-            cached = heuristic_cache.get(node)
-            if cached is not None:
-                return cached
-
-            value = min(
-                euclidean_distance(node, goal, nodes)
-                for goal in goals
-            )
-            heuristic_cache[node] = value
-            return value
-
+    """A* using an admissible timetable-topology heuristic."""
+    heuristic = _topology_heuristic_factory(graph, goals)
     counter = 0
-    priority_queue = [
-        (heuristic(start), 0.0, counter, start)
-    ]
+    priority_queue = [(heuristic(start), 0.0, counter, start)]
     best_cost = {start: 0.0}
     parent = {start: None}
     parent_cost = {}
     expanded = 0
 
     while priority_queue:
-        f_cost, current_cost, _, current = heapq.heappop(
-            priority_queue
-        )
+        f_cost, current_cost, _, current = heapq.heappop(priority_queue)
 
         if current_cost != best_cost.get(current):
             continue
@@ -409,15 +347,11 @@ def a_star_search(graph, start, goals, nodes):
         for neighbour, edge_cost in graph.get(current, ()):
             new_cost = current_cost + edge_cost
 
-            if new_cost < best_cost.get(
-                neighbour,
-                float('inf')
-            ):
+            if new_cost < best_cost.get(neighbour, float('inf')):
                 best_cost[neighbour] = new_cost
                 parent[neighbour] = current
                 parent_cost[neighbour] = edge_cost
                 counter += 1
-
                 heapq.heappush(
                     priority_queue,
                     (
@@ -441,63 +375,8 @@ ALGORITHMS = {
 
 
 # ============================================================
-# 3. LOCAL TRAIN COORDINATES
+# 3. OFFICIAL LOCAL-TRAIN GRAPH HELPERS
 # ============================================================
-
-LOCAL_COORDS = {
-
-    'CSMT': (18.9402, 72.8356),
-    'Masjid': (18.9518, 72.8380),
-    'Sandhurst Road': (18.9609, 72.8388),
-    'Dockyarad Road': (18.9680, 72.8415),
-    'Reay Road': (18.9763, 72.8442),
-    'Cotton Green': (18.9860, 72.8447),
-    'Sewri': (19.0005, 72.8551),
-    'Vadala Road': (19.0173, 72.8586),
-    'GTB Nagar': (19.0298, 72.8652),
-    'Chunabhatti': (19.0525, 72.8780),
-    'Kurla': (19.0650, 72.8790),
-    'Tilaknagar': (19.0675, 72.8890),
-    'Chembur': (19.0626, 72.8980),
-    'Govandi': (19.0552, 72.9146),
-    'Mankhurd': (19.0480, 72.9325),
-    'Vashi': (19.0660, 72.9980),
-    'Sanpada': (19.0678, 73.0097),
-    'Juinagar': (19.0557, 73.0155),
-    'Nerul': (19.0343, 73.0172),
-    'Seawood Darave': (19.0213, 73.0173),
-    'Belapur CBD': (19.0167, 73.0397),
-    'Kharghar': (19.0485, 73.0690),
-    'Mansarovar': (19.0182, 73.0955),
-    'Khandeshwar': (19.0065, 73.0985),
-    'Panvel': (18.9894, 73.1175),
-}
-
-# Real railway topology.  The old code used one global station order for
-# every Local Train line, which could accidentally make a Central-line node
-# behave like a Harbour-line neighbour.  Keep each physical line separate.
-#
-# A station such as Kurla is an interchange.  If the CSV contains Kurla only
-# once (for example tagged as Central), the topology builder below can still
-# use that physical Kurla node as the Harbour-line interchange anchor.
-LOCAL_TRAIN_TOPOLOGY = {
-    'harbour': [
-        'CSMT', 'Masjid', 'Sandhurst Road', 'Dockyarad Road', 'Reay Road',
-        'Cotton Green', 'Sewri', 'Vadala Road', 'GTB Nagar', 'Chunabhatti',
-        'Kurla', 'Tilaknagar', 'Chembur', 'Govandi', 'Mankhurd', 'Vashi',
-        'Sanpada', 'Juinagar', 'Nerul', 'Seawood Darave', 'Belapur CBD',
-        'Kharghar', 'Mansarovar', 'Khandeshwar', 'Panvel'
-    ],
-}
-
-# Routing costs are distance-like, so mode changes need an explicit penalty.
-# Otherwise a bus stop a few metres from a railway station looks artificially
-# cheaper than staying on a direct train line.
-BUS_TRANSFER_RADIUS_KM = 0.35
-BUS_TRANSFER_PENALTY_KM = 3.0
-OTHER_TRANSFER_RADIUS_KM = 0.40
-OTHER_TRANSFER_PENALTY_KM = 0.75
-
 
 def norm_text(value):
     return ''.join(
@@ -507,929 +386,201 @@ def norm_text(value):
     )
 
 
-def estimate_local_coordinate(
-    station_name,
-    valid_rows
-):
-    if station_name in LOCAL_COORDS:
-        return LOCAL_COORDS[station_name]
+def _canonical_station_key(value):
+    return norm_text(value)
 
-    target = norm_text(station_name)
 
-    if not target:
+def _parse_schedule_minutes(value):
+    """Convert an official HH:MM:SS timetable value to minutes."""
+    if pd.isna(value):
+        return None
+    text = str(value).strip()
+    try:
+        td = pd.to_timedelta(text)
+        return float(td.total_seconds() / 60.0)
+    except (ValueError, TypeError):
         return None
 
-    candidates = []
 
-    for _, row in valid_rows.iterrows():
+def _station_display_map(stations_df, stop_times_df):
+    """Use official station names; no coordinates are inferred."""
+    result = {}
 
-        candidate_name = str(
-            row.get(
-                'Station_Name',
-                ''
-            )
-        ).strip()
-
-        candidate = norm_text(
-            candidate_name
-        )
-
-        if not candidate:
+    for _, row in stations_df.iterrows():
+        station = str(row.get('station', '')).strip()
+        if not station:
             continue
-
-        score = 0.0
-
-        if target in candidate or candidate in target:
-            score += 1.0
-
-        score += (
-            SequenceMatcher(
-                None,
-                target,
-                candidate
-            ).ratio()
-            * 0.7
-        )
-
-        if 'station' in candidate:
-            score += 0.15
-
-        if 'railway' in candidate:
-            score += 0.15
-
-        if score >= 0.75:
-
-            candidates.append(
-                (
-                    score,
-                    float(row['latitude']),
-                    float(row['longitude'])
-                )
-            )
-
-    if candidates:
-
-        candidates.sort(
-            reverse=True
-        )
-
-        top = candidates[:8]
-
-        return (
-            float(
-                np.mean(
-                    [x[1] for x in top]
-                )
-            ),
-            float(
-                np.mean(
-                    [x[2] for x in top]
-                )
-            )
-        )
-
-    return None
-
-
-def fill_local_coordinates(
-    df_transit
-):
-
-    df = df_transit.copy()
-
-    valid_rows = df.dropna(
-        subset=[
-            'latitude',
-            'longitude'
-        ]
-    ).copy()
-
-    local_mask = (
-        df['Transport_Mode']
-        .astype(str)
-        .str.strip()
-        .str.lower()
-        .eq('local train')
-    )
-
-    for idx in df[local_mask].index:
-
-        name = str(
-            df.at[
-                idx,
-                'Station_Name'
-            ]
-        ).strip()
-
-        coords = estimate_local_coordinate(
-            name,
-            valid_rows
-        )
-
-        if coords is not None:
-
-            df.at[
-                idx,
-                'latitude'
-            ] = coords[0]
-
-            df.at[
-                idx,
-                'longitude'
-            ] = coords[1]
-
-    return df
-
-
-# ============================================================
-# GTFS BUS HELPERS
-# ============================================================
-
-def load_gtfs_bus_data():
-    """Load compact GTFS bus stops and one ordered trip sequence per route."""
-    stops_path = os.path.join(DATA_DIR, 'stops.txt')
-    sequences_path = os.path.join(DATA_DIR, 'bus_route_sequences.csv')
-
-    if not os.path.exists(stops_path):
-        raise FileNotFoundError(f'Missing GTFS stops file: {stops_path}')
-    if not os.path.exists(sequences_path):
-        raise FileNotFoundError(f'Missing GTFS sequence file: {sequences_path}')
-
-    stops = pd.read_csv(stops_path, encoding='utf-8-sig')
-    sequences = pd.read_csv(sequences_path, encoding='utf-8-sig')
-
-    required_stops = {'stop_id', 'stop_name', 'stop_lat', 'stop_lon'}
-    required_sequences = {'route_id', 'direction_id', 'trip_id', 'stop_sequence', 'stop_id'}
-    if not required_stops.issubset(stops.columns):
-        raise ValueError(f'stops.txt is missing columns: {required_stops - set(stops.columns)}')
-    if not required_sequences.issubset(sequences.columns):
-        raise ValueError('bus_route_sequences.csv has an unexpected format')
-
-    stops = stops.rename(columns={'stop_lat': 'latitude', 'stop_lon': 'longitude'})
-    stops = stops[['stop_id', 'stop_name', 'latitude', 'longitude']].dropna(
-        subset=['stop_id', 'latitude', 'longitude']
-    ).copy()
-    stops['stop_id'] = stops['stop_id'].astype(str).str.strip()
-    stops['stop_name'] = stops['stop_name'].fillna('').astype(str).str.strip()
-    stops['latitude'] = pd.to_numeric(stops['latitude'], errors='coerce')
-    stops['longitude'] = pd.to_numeric(stops['longitude'], errors='coerce')
-    stops = stops.dropna(subset=['latitude', 'longitude'])
-
-    sequences = sequences.dropna(
-        subset=['route_id', 'direction_id', 'trip_id', 'stop_sequence', 'stop_id']
-    ).copy()
-    sequences['route_id'] = sequences['route_id'].astype(str).str.strip()
-    sequences['direction_id'] = sequences['direction_id'].astype(str).str.strip()
-    sequences['trip_id'] = sequences['trip_id'].astype(str).str.strip()
-    sequences['stop_id'] = sequences['stop_id'].astype(str).str.strip()
-    sequences['stop_sequence'] = pd.to_numeric(
-        sequences['stop_sequence'], errors='coerce'
-    )
-    sequences = sequences.dropna(subset=['stop_sequence'])
-    sequences['stop_sequence'] = sequences['stop_sequence'].astype(int)
-
-    return stops, sequences
-
-
-def add_directed_edge(graph, a, b, cost):
-    if a == b:
-        return
-    graph.setdefault(a, [])
-    graph.setdefault(b, [])
-    edge = (b, float(cost))
-    if edge not in graph[a]:
-        graph[a].append(edge)
-
-
-# ============================================================
-# 4. GRAPH HELPERS
-# ============================================================
-
-def add_edge(
-    graph,
-    a,
-    b,
-    cost
-):
-
-    if a == b:
-        return
-
-    graph[a].append(
-        (
-            b,
-            float(cost)
-        )
-    )
-
-    graph[b].append(
-        (
-            a,
-            float(cost)
-        )
-    )
-
-
-def connect_line_in_source_order(
-    df,
-    graph,
-    nodes,
-    node_rows,
-    mode_filter=None
-):
-
-    work = df.copy()
-
-    if mode_filter is not None:
-
-        work = work[
-            work['Transport_Mode']
-            .astype(str)
-            .str.strip()
-            .eq(mode_filter)
-        ]
-
-    work = work.dropna(
-        subset=[
-            'latitude',
-            'longitude'
-        ]
-    )
-
-    if 'Line' not in work.columns:
-        return
-
-    for line_name, group in work.groupby(
-        work['Line']
-        .astype(str)
-        .str.strip(),
-        sort=False
-    ):
-
-        previous = None
-
-        for idx in group.index:
-
-            node = node_rows.get(idx)
-
-            if node is None:
-                continue
-
-            if previous is not None:
-
-                distance_km = euclidean_distance(
-                    previous,
-                    node,
-                    nodes
-                )
-
-                distance_km = max(
-                    distance_km,
-                    0.05
-                )
-
-                add_edge(
-                    graph,
-                    previous,
-                    node,
-                    distance_km
-                )
-
-            previous = node
-
-
-def _normalized_line(value):
-    text = norm_text(value)
-    for suffix in ('line', 'railway'):
-        if text.endswith(suffix):
-            text = text[:-len(suffix)]
-    return text
-
-
-def _canonical_station_key(value):
-    key = norm_text(value)
-    aliases = {
-        'seawoods': 'seawooddarave',
-        'seawood': 'seawooddarave',
-        'seawooddarave': 'seawooddarave',
-        'seawoodsdarave': 'seawooddarave',
-        'tilaknagar': 'tilaknagar',
-        'tilaknagarl': 'tilaknagar',
-        'wadalaroad': 'wadalaroad',
-        'vadalaroad': 'wadalaroad',
-        'dockyardroad': 'dockyaradroad',
-        'dockyaradroad': 'dockyaradroad',
-        'cbd belapur': 'belapurcbd',
-        'cbdbelapur': 'belapurcbd',
-        'gtbnagar': 'gtbnagar'
-    }
-    return aliases.get(key, key)
-
-
-def connect_local_train_lines(
-    df,
-    graph,
-    nodes,
-    node_rows
-):
-    """Connect Local Train stations using explicit physical line topology.
-
-    The CSV's row order is not railway order.  More importantly, one global
-    station list must never be reused as the order for every railway line.
-    That can create bogus shortcuts and can make the router leave a train for
-    a bus simply because the real railway edges are missing.
+        key = _canonical_station_key(station)
+        if key and key not in result:
+            result[key] = station
+
+    for _, row in stop_times_df[['station']].dropna().iterrows():
+        station = str(row['station']).strip()
+        if not station:
+            continue
+        key = _canonical_station_key(station)
+        if key and key not in result:
+            result[key] = station
+
+    return result
+
+
+def _build_official_railway_graph(stations_df, stop_times_df):
+    """Build the railway graph exclusively from official stop sequences.
+
+    Each directed edge is created only when two stations are consecutive
+    stops of the same official train service. Edge cost is the scheduled
+    time difference between those two stops.
     """
-    all_by_station = {}
-    by_line = {}
-
-    for idx, row in df.iterrows():
-        node = node_rows.get(idx)
-        if node is None:
-            continue
-        if str(row.get('Transport_Mode', '')).strip() != 'Local Train':
-            continue
-
-        line = _normalized_line(row.get('Line', ''))
-        label = str(row.get('Station_Name', '')).strip()
-        station_key = _canonical_station_key(label)
-        if not station_key:
-            continue
-
-        record = (node, line, label)
-        all_by_station.setdefault(station_key, []).append(record)
-        if line:
-            by_line.setdefault(line, []).append(record)
-
-    topology_station_keys = set()
-
-    # Connect known lines only according to their own physical station order.
-    for topology_line, station_names in LOCAL_TRAIN_TOPOLOGY.items():
-        previous = None
-
-        for station_name in station_names:
-            station_key = _canonical_station_key(station_name)
-            topology_station_keys.add(station_key)
-            candidates = by_line.get(topology_line, [])
-            candidates = [r for r in candidates if _canonical_station_key(r[2]) == station_key]
-
-            # Interchange fallback: datasets sometimes list Kurla only once
-            # and tag it as Central even though the physical station is also
-            # where the Harbour route continues.  Reuse the same physical node
-            # instead of forcing a fake bus transfer.
-            if not candidates:
-                candidates = all_by_station.get(station_key, [])
-
-            if not candidates:
-                continue
-
-            target_coord = LOCAL_COORDS.get(station_name)
-            if target_coord is not None:
-                current = min(
-                    candidates,
-                    key=lambda r: point_distance(nodes[r[0]], target_coord)
-                )[0]
-            else:
-                current = candidates[0][0]
-
-            if previous is not None and previous != current:
-                add_edge(
-                    graph,
-                    previous,
-                    current,
-                    max(euclidean_distance(previous, current, nodes), 0.05)
-                )
-            previous = current
-
-    # Preserve source order only for lines/stations that are not covered by a
-    # curated topology.  This keeps other local-train data usable without
-    # allowing known Harbour stations to be connected in an arbitrary order.
-    for line, records in by_line.items():
-        unknown = [
-            record[0]
-            for record in records
-            if _canonical_station_key(record[2]) not in topology_station_keys
-        ]
-        for a, b in zip(unknown, unknown[1:]):
-            add_edge(
-                graph,
-                a,
-                b,
-                max(euclidean_distance(a, b, nodes), 0.05)
-            )
-
-def connect_same_station_transfers(
-    df,
-    graph,
-    nodes,
-    node_rows
-):
-
-    groups = {}
-
-    for idx, row in df.iterrows():
-
-        node = node_rows.get(idx)
-
-        if node is None:
-            continue
-
-        name = norm_text(
-            row.get(
-                'Station_Name',
-                ''
-            )
-        )
-
-        if not name:
-            continue
-
-        groups.setdefault(
-            name,
-            []
-        ).append(node)
-
-    for _, group in groups.items():
-
-        unique = list(
-            dict.fromkeys(group)
-        )
-
-        if len(unique) < 2:
-            continue
-
-        for i in range(
-            len(unique)
-        ):
-
-            for j in range(
-                i + 1,
-                len(unique)
-            ):
-
-                if (
-                    unique[i] in nodes
-                    and unique[j] in nodes
-                ):
-
-                    # Only connect duplicate station records when they are
-                    # physically close. Some bus datasets reuse the same
-                    # stop name in different parts of Mumbai; treating all
-                    # same-name records as a zero-cost transfer creates
-                    # impossible teleports through the graph.
-                    distance_km = point_distance(
-                        nodes[unique[i]],
-                        nodes[unique[j]]
-                    )
-
-                    if distance_km <= 0.35:
-                        add_edge(
-                            graph,
-                            unique[i],
-                            unique[j],
-                            0.15
-                        )
-
-
-def build_graph(
-    df_wards,
-    df_transit,
-    gtfs_stops,
-    gtfs_sequences
-):
+    display_map = _station_display_map(stations_df, stop_times_df)
 
     nodes = {}
     graph = {}
     metadata = {}
+    station_lines = {}
 
-    # --------------------------------------------------------
-    # WARD NODES
-    # --------------------------------------------------------
-
-    for i, row in df_wards.iterrows():
-
-        ward = str(
-            row['Ward_Alphabet']
-        )
-
-        node = f'W_{ward}'
-
-        nodes[node] = (
-            float(row['latitude']),
-            float(row['longitude'])
-        )
-
-        graph[node] = []
-
-        metadata[node] = {
-            'label': f'Ward {ward}',
-            'mode': 'Ward',
-            'line': ''
-        }
-
-    # --------------------------------------------------------
-    # TRANSPORT NODES
-    # --------------------------------------------------------
-
-    node_rows = {}
-
-    for idx, row in df_transit.iterrows():
-
-        # Bus stops are loaded from GTFS below. Keeping CSV bus nodes here
-        # would reintroduce the old approximate bus network.
-        if str(row.get('Transport_Mode', '')).strip() == 'Bus':
-            continue
-
-        if (
-            pd.isna(row['latitude'])
-            or pd.isna(row['longitude'])
-        ):
-            continue
-
-        node = f'T_{idx}'
-
-        node_rows[idx] = node
-
-        nodes[node] = (
-            float(row['latitude']),
-            float(row['longitude'])
-        )
-
-        graph[node] = []
-
-        metadata[node] = {
-            'label': str(
-                row['Station_Name']
-            ).strip(),
-
-            'mode': str(
-                row.get(
-                    'Transport_Mode',
-                    'Transit'
-                )
-            ).strip(),
-
-            'line': str(
-                row.get(
-                    'Line',
-                    ''
-                )
-            ).strip()
-        }
-
-    # --------------------------------------------------------
-    # REAL GTFS BUS STOP NODES
-    # --------------------------------------------------------
-    stop_id_to_node = {}
-
-    for _, row in gtfs_stops.iterrows():
-        stop_id = str(row['stop_id']).strip()
-        if not stop_id or stop_id in stop_id_to_node:
-            continue
-
-        node = f'B_{stop_id}'
-        nodes[node] = (float(row['latitude']), float(row['longitude']))
+    for key, display in display_map.items():
+        node = f'S_{key}'
+        nodes[node] = (None, None)
         graph[node] = []
         metadata[node] = {
-            'label': str(row['stop_name']).strip() or stop_id,
-            'mode': 'Bus',
+            'label': display,
+            'mode': 'Local Train',
             'line': '',
-            'stop_id': stop_id
+            'coordinates_available': False
         }
-        stop_id_to_node[stop_id] = node
 
-    ward_nodes = [
-        n for n in nodes
-        if n.startswith('W_')
-    ]
+    # Official station master tells us which line(s) a station belongs to.
+    for _, row in stations_df.iterrows():
+        station = str(row.get('station', '')).strip()
+        line = str(row.get('line', '')).strip()
+        key = _canonical_station_key(station)
+        if key and line:
+            station_lines.setdefault(key, set()).add(line)
 
-    transport_nodes = [
-        n for n in nodes
-        if n.startswith('T_') or n.startswith('B_')
-    ]
+    for key, lines_for_station in station_lines.items():
+        node = f'S_{key}'
+        if node in metadata:
+            ordered = sorted(lines_for_station)
+            metadata[node]['line'] = ' • '.join(ordered)
 
-    # --------------------------------------------------------
-    # REAL LINE CONNECTIONS
-    # --------------------------------------------------------
+    edge_costs = {}
+    service_count = 0
+    edge_records = 0
 
-    # Local Train edges are handled separately because the CSV row
-    # order is not a reliable representation of railway order.
-    # Metro/Monorail can continue using their source ordering.
-    connect_local_train_lines(
-        df_transit,
-        graph,
-        nodes,
-        node_rows
+    work = stop_times_df.copy()
+    work['station'] = work['station'].astype(str).str.strip()
+    work['line'] = work['line'].astype(str).str.strip()
+    work['train_id'] = work['train_id'].astype(str).str.strip()
+    work['stop_sequence'] = pd.to_numeric(
+        work['stop_sequence'], errors='coerce'
+    )
+    work['_minutes'] = work['scheduled_time'].map(_parse_schedule_minutes)
+
+    work = work.dropna(
+        subset=['station', 'train_id', 'stop_sequence', '_minutes']
     )
 
-    for mode in [
-        'Metro',
-        'Monorail'
-    ]:
-        connect_line_in_source_order(
-            df_transit,
-            graph,
-            nodes,
-            node_rows,
-            mode_filter=mode
-        )
-
-    # --------------------------------------------------------
-    # SAME STATION TRANSFERS
-    # --------------------------------------------------------
-
-    connect_same_station_transfers(
-        df_transit,
-        graph,
-        nodes,
-        node_rows
-    )
-
-    # --------------------------------------------------------
-    # WARD -> TRANSPORT CONNECTIONS
-    # --------------------------------------------------------
-
-    if transport_nodes:
-
-        transport_coordinates = np.array(
-            [
-                nodes[n]
-                for n in transport_nodes
-            ]
-        )
-
-        transport_tree = cKDTree(
-            transport_coordinates
-        )
-
-        for ward_node in ward_nodes:
-
-            ward_coord = np.array(
-                nodes[ward_node]
-            )
-
-            k = min(
-                5,
-                len(transport_nodes)
-            )
-
-            distances, indices = (
-                transport_tree.query(
-                    ward_coord,
-                    k=k
-                )
-            )
-
-            for distance, transport_index in zip(
-                np.atleast_1d(distances),
-                np.atleast_1d(indices)
-            ):
-
-                transport_node = (
-                    transport_nodes[
-                        int(transport_index)
-                    ]
-                )
-
-                distance_km = (
-                    float(distance)
-                    * 111.0
-                )
-
-                add_edge(
-                    graph,
-                    ward_node,
-                    transport_node,
-                    distance_km
-                )
-
-    # --------------------------------------------------------
-    # REAL GTFS BUS ROUTE CONNECTIONS
-    # --------------------------------------------------------
-    # Only consecutive stops in the GTFS trip sequence are connected.
-    # This replaces the old nearest-neighbour geographic bus mesh.
-    bus_edge_routes = {}
-    bus_edges_added = 0
-
-    for route_key, route_stops in gtfs_sequences.groupby(
-        ['route_id', 'direction_id', 'trip_id'], sort=False
+    # Train IDs are interpreted together with line, matching the official
+    # service records and preventing unrelated line records from mixing.
+    for (line_name, train_id), group in work.groupby(
+        ['line', 'train_id'], sort=False
     ):
-        route_id, direction_id, trip_id = route_key
-        route_stops = route_stops.sort_values('stop_sequence')
+        group = group.sort_values('stop_sequence')
+        previous = None
+        previous_time = None
 
-        ordered_nodes = [
-            stop_id_to_node.get(str(stop_id).strip())
-            for stop_id in route_stops['stop_id']
-        ]
-        ordered_nodes = [node for node in ordered_nodes if node is not None]
+        for _, row in group.iterrows():
+            key = _canonical_station_key(row['station'])
+            node = f'S_{key}' if key else None
+            current_time = float(row['_minutes'])
 
-        for previous, current in zip(ordered_nodes, ordered_nodes[1:]):
-            distance_km = max(
-                euclidean_distance(previous, current, nodes),
-                0.05
+            if node not in graph:
+                previous = node
+                previous_time = current_time
+                continue
+
+            if previous is not None and previous != node and previous_time is not None:
+                duration = current_time - previous_time
+
+                # Overnight services can legitimately cross midnight.
+                if duration < 0:
+                    duration += 24.0 * 60.0
+
+                # Never invent a duration. If the official timetable cannot
+                # provide a positive interval, that connection is skipped.
+                if duration > 0:
+                    pair = (previous, node)
+                    existing = edge_costs.get(pair)
+                    if existing is None or duration < existing:
+                        edge_costs[pair] = duration
+                    edge_records += 1
+
+            previous = node
+            previous_time = current_time
+
+        service_count += 1
+
+    for (a, b), cost in edge_costs.items():
+        graph[a].append((b, float(cost)))
+
+    for node in graph:
+        graph[node].sort(key=lambda item: (item[0], item[1]))
+
+    # Add line metadata discovered directly from official stop-time records.
+    stop_line_map = {}
+    for _, row in work[['station', 'line']].drop_duplicates().iterrows():
+        key = _canonical_station_key(row['station'])
+        line = str(row['line']).strip()
+        if key and line:
+            stop_line_map.setdefault(key, set()).add(line)
+
+    for key, lines_for_station in stop_line_map.items():
+        node = f'S_{key}'
+        if node in metadata:
+            all_lines = set(
+                filter(None, metadata[node].get('line', '').split(' • '))
             )
-            add_directed_edge(graph, previous, current, distance_km)
-            bus_edge_routes.setdefault((previous, current), set()).add(str(route_id))
-            bus_edges_added += 1
+            all_lines.update(lines_for_station)
+            metadata[node]['line'] = ' • '.join(sorted(all_lines))
 
-    # Make route lists deterministic and JSON/cache friendly.
-    bus_edge_routes = {
-        key: tuple(sorted(value))
-        for key, value in bus_edge_routes.items()
-    }
-
-    print(f'Real GTFS bus connections added: {bus_edges_added}')
-
-    # --------------------------------------------------------
-    # SHORT WALKING / TRANSFER CONNECTIONS
-    # --------------------------------------------------------
-
-    if transport_nodes:
-
-        coords = np.array(
-            [
-                nodes[n]
-                for n in transport_nodes
-            ]
-        )
-
-        tree = cKDTree(coords)
-
-        k = min(
-            5,
-            len(transport_nodes) - 1
-        ) if len(transport_nodes) > 1 else 0
-
-        if k:
-
-            distances, indices = (
-                tree.query(
-                    coords,
-                    k=k + 1
-                )
-            )
-
-            for i, node in enumerate(
-                transport_nodes
-            ):
-
-                for distance, j in zip(
-                    np.atleast_1d(
-                        distances[i]
-                    )[1:],
-
-                    np.atleast_1d(
-                        indices[i]
-                    )[1:]
-                ):
-
-                    neighbour = (
-                        transport_nodes[
-                            int(j)
-                        ]
-                    )
-
-                    mode_a = metadata[
-                        node
-                    ]['mode']
-
-                    mode_b = metadata[
-                        neighbour
-                    ]['mode']
-
-                    # Bus-to-bus travel must come only from actual GTFS
-                    # consecutive-stop sequences, never geographic proximity.
-                    if mode_a == 'Bus' and mode_b == 'Bus':
-                        continue
-
-                    # Prevent fake railway shortcuts.
-                    if (
-                        mode_a == 'Local Train'
-                        and mode_b == 'Local Train'
-                    ):
-                        continue
-
-                    if (
-                        mode_a == 'Metro'
-                        and mode_b == 'Metro'
-                    ):
-                        continue
-
-                    if (
-                        mode_a == 'Monorail'
-                        and mode_b == 'Monorail'
-                    ):
-                        continue
-
-                    distance_km = float(distance) * 111.0
-
-                    # Bus interchanges are allowed only when the stops are
-                    # genuinely close, and they carry a boarding/transfer
-                    # penalty.  This stops Kurla -> Seawoods from abandoning
-                    # a continuous Harbour local-train path just to chase a
-                    # nearby bus stop.
-                    if 'Bus' in (mode_a, mode_b):
-                        if distance_km <= BUS_TRANSFER_RADIUS_KM:
-                            add_edge(
-                                graph,
-                                node,
-                                neighbour,
-                                distance_km + BUS_TRANSFER_PENALTY_KM
-                            )
-                    elif distance_km <= OTHER_TRANSFER_RADIUS_KM:
-                        add_edge(
-                            graph,
-                            node,
-                            neighbour,
-                            distance_km + OTHER_TRANSFER_PENALTY_KM
-                        )
-
-    return (
-        graph,
-        nodes,
-        transport_nodes,
-        metadata,
-        node_rows,
-        bus_edge_routes
+    print(
+        f'Official railway graph: {len(graph)} stations, '
+        f'{len(edge_costs)} directed connections from '
+        f'{service_count} official services.'
     )
+
+    return graph, nodes, metadata, edge_records
 
 
 # ============================================================
 # 5. STATION LOOKUP
 # ============================================================
 
-def build_station_lookup(
-    df_transit,
-    node_rows,
-    nodes=None,
-    metadata=None
-):
-    """Build searchable locations from CSV transit plus real GTFS bus stops."""
-    station_lookup = {}
-    priority = {
-        'Local Train': 0,
-        'Metro': 1,
-        'Monorail': 2,
-        'Bus': 3
-    }
-
-    rows = []
-    for idx, row in df_transit.iterrows():
-        node = node_rows.get(idx)
-        if node is None:
+def build_station_lookup(stations_df, stop_times_df, nodes, metadata):
+    """Build searchable official railway stations only."""
+    lookup = {}
+    for node, info in metadata.items():
+        if info.get('mode') != 'Local Train':
             continue
-        name = str(row.get('Station_Name', '')).strip()
+        name = str(info.get('label', '')).strip()
         if not name:
             continue
-        mode = str(row.get('Transport_Mode', 'Transit')).strip()
-        rows.append((priority.get(mode, 9), str(name).lower(), name, node, mode, str(row.get('Line', '')).strip()))
-
-    if nodes is not None and metadata is not None:
-        for node, info in metadata.items():
-            if info.get('mode') != 'Bus':
-                continue
-            name = str(info.get('label', '')).strip()
-            if not name or node not in nodes:
-                continue
-            rows.append((priority['Bus'], name.lower(), name, node, 'Bus', ''))
-
-    rows.sort(key=lambda x: (x[0], x[1], x[2]))
-    for _, _, name, node, mode, line in rows:
-        # Keep the first occurrence for display, preserving the mode priority.
-        if name in station_lookup:
-            continue
-        station_lookup[name] = {
+        lookup[name] = {
             'node': node,
-            'latitude': float(nodes[node][0]) if nodes is not None else None,
-            'longitude': float(nodes[node][1]) if nodes is not None else None,
-            'mode': mode,
-            'line': line
+            'latitude': None,
+            'longitude': None,
+            'mode': 'Local Train',
+            'line': info.get('line', ''),
+            'coordinates_available': False
         }
+    return dict(sorted(lookup.items(), key=lambda kv: kv[0].lower()))
 
-    return station_lookup
 
-
-def node_label(
-    node,
-    node_to_station,
-    metadata
-):
-
+def node_label(node, node_to_station, metadata):
     if node in node_to_station:
         return node_to_station[node]
-
-    if str(node).startswith('W_'):
-        return (
-            'Ward '
-            + str(node)[2:]
-        )
-
-    return metadata.get(
-        node,
-        {}
-    ).get(
-        'label',
-        str(node)
-    )
+    return metadata.get(node, {}).get('label', str(node))
 
 
 # ============================================================
@@ -1742,126 +893,92 @@ def harmonic_mean(a, b):
     )
 
 
-def create_benchmark_pairs(
-    station_lookup,
-    number_of_pairs=60
-):
-
-    # --------------------------------------------------------
-    # Unique station nodes
-    # --------------------------------------------------------
-
-    unique_nodes = {}
-
-    for name, info in station_lookup.items():
-
-        node = info['node']
-
-        if node not in unique_nodes:
-
-            unique_nodes[node] = {
-                'name': name,
-                'node': node,
-                'mode': info.get(
-                    'mode',
-                    ''
-                )
-            }
-
-    stations = list(
-        unique_nodes.values()
-    )
-
-    if len(stations) < 2:
+def create_benchmark_pairs(graph, station_lookup, number_of_pairs=60):
+    """Create 60 deterministic, actually reachable official timetable pairs."""
+    names = sorted(station_lookup.keys(), key=str.lower)
+    if len(names) < 2:
         return []
 
-    # --------------------------------------------------------
-    # FIXED SEED
-    # --------------------------------------------------------
-
     rng = random.Random(42)
+    candidates = []
+    seen = set()
 
-    pairs = []
-    used = set()
+    # Build a lightweight directed reachability cache from each candidate
+    # start. This uses only graph topology and prevents unreachable pairs
+    # from being counted as benchmark failures.
+    reachability = {}
 
-    max_attempts = (
-        number_of_pairs * 20
-    )
+    def reachable_from(start_node):
+        if start_node in reachability:
+            return reachability[start_node]
 
-    attempts = 0
+        seen_nodes = {start_node}
+        queue = deque([start_node])
 
-    while (
-        len(pairs) < number_of_pairs
-        and attempts < max_attempts
-    ):
+        while queue:
+            current = queue.popleft()
+            for neighbour, _ in graph.get(current, ()):
+                if neighbour not in seen_nodes:
+                    seen_nodes.add(neighbour)
+                    queue.append(neighbour)
 
-        attempts += 1
+        reachability[start_node] = seen_nodes
+        return seen_nodes
 
-        a, b = rng.sample(
-            stations,
-            2
-        )
+    # Prefer the largest reachable component without assuming any geography.
+    for _ in range(max(number_of_pairs * 10, 600)):
+        start_name, goal_name = rng.sample(names, 2)
+        key = (start_name, goal_name)
 
-        key = (
-            a['node'],
-            b['node']
-        )
-
-        reverse_key = (
-            b['node'],
-            a['node']
-        )
-
-        if (
-            key in used
-            or reverse_key in used
-        ):
+        if key in seen:
             continue
 
-        used.add(key)
+        start_node = station_lookup[start_name]['node']
+        goal_node = station_lookup[goal_name]['node']
 
-        pairs.append(
-            (
-                a['node'],
-                b['node'],
-                a['name'],
-                b['name']
-            )
-        )
+        if goal_node not in reachable_from(start_node):
+            continue
 
-    return pairs
+        seen.add(key)
+        candidates.append(key)
+
+        if len(candidates) >= number_of_pairs:
+            break
+
+    return sorted(candidates)
 
 
-def evaluate_algorithms(
-    graph,
-    nodes,
-    station_lookup,
-    number_of_pairs=60
-):
+def _benchmark_score(success_rate, optimality, search_efficiency, runtime_efficiency):
+    """Weighted evaluation for timetable routing.
 
-    print(
-        f'Benchmarking algorithms on '
-        f'{number_of_pairs} fixed routes...'
+    Final score =
+      success × (0.55 × route optimality
+                 + 0.30 × search efficiency
+                 + 0.15 × runtime efficiency)
+
+    Route optimality measures how close the algorithm's scheduled travel
+    time is to the best successful result for the same route.
+    Search efficiency measures expanded nodes relative to the best result.
+    Runtime efficiency is based on the fastest measured successful result.
+    """
+    return success_rate * (
+        0.55 * max(0.0, min(1.0, optimality))
+        + 0.30 * max(0.0, min(1.0, search_efficiency))
+        + 0.15 * max(0.0, min(1.0, runtime_efficiency))
     )
 
-    pairs = create_benchmark_pairs(
-        station_lookup,
-        number_of_pairs
-    )
 
-    if not pairs:
-        return pd.DataFrame(), []
+def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
+    print(f'Benchmarking algorithms on {number_of_pairs} fixed official routes...')
 
-    # --------------------------------------------------------
-    # Storage
-    # --------------------------------------------------------
-
+    pairs = create_benchmark_pairs(graph, station_lookup, number_of_pairs)
     metrics = {
         name: {
             'successes': 0,
             'optimality_values': [],
             'efficiency_values': [],
-            'execution_times': [],
+            'runtime_values': [],
+            'runtime_efficiency_values': [],
             'route_costs': [],
             'expanded_nodes': []
         }
@@ -1869,333 +986,122 @@ def evaluate_algorithms(
     }
 
     valid_benchmarks = 0
+    benchmark_rows = []
 
-    # --------------------------------------------------------
-    # Run every algorithm on every pair
-    # --------------------------------------------------------
+    for start_name, goal_name in pairs:
+        start = station_lookup[start_name]['node']
+        goal = station_lookup[goal_name]['node']
 
-    for pair_number, (
-        start,
-        destination,
-        start_name,
-        destination_name
-    ) in enumerate(pairs, 1):
+        measurements = {}
 
-        # ----------------------------------------------------
-        # UCS ground truth for route optimality
-        # ----------------------------------------------------
+        for algorithm_name, algorithm in ALGORITHMS.items():
+            t0 = time.perf_counter()
+            path, cost, expanded = algorithm(graph, start, {goal}, nodes)
+            elapsed = time.perf_counter() - t0
 
-        ucs_path, ucs_cost, ucs_expanded = (
-            uniform_cost_search(
-                graph,
-                start,
-                {destination},
-                nodes
-            )
-        )
+            if path is not None and np.isfinite(cost) and cost > 0:
+                measurements[algorithm_name] = {
+                    'cost': float(cost),
+                    'expanded': int(expanded),
+                    'time': float(elapsed)
+                }
 
-        # If even UCS cannot connect these nodes,
-        # don't use this pair as a benchmark.
-        if (
-            ucs_path is None
-            or not np.isfinite(ucs_cost)
-            or ucs_cost <= 0
-        ):
+        if not measurements:
             continue
 
         valid_benchmarks += 1
+        best_cost = min(m['cost'] for m in measurements.values())
+        best_expanded = min(m['expanded'] for m in measurements.values())
+        best_time = min(m['time'] for m in measurements.values())
 
-        # ----------------------------------------------------
-        # Run every algorithm first. Efficiency must be scored
-        # only AFTER all algorithms have been measured, otherwise
-        # anything that beats UCS gets incorrectly capped at 1.0.
-        # ----------------------------------------------------
+        benchmark_rows.append({
+            'start': start_name,
+            'destination': goal_name,
+            'best_cost': best_cost
+        })
 
-        pair_results = {}
-
-        for algorithm_name, algorithm in ALGORITHMS.items():
-
-            started = time.perf_counter()
-
-            path, cost, expanded = algorithm(
-                graph,
-                start,
-                {destination},
-                nodes
+        for algorithm_name, measurement in measurements.items():
+            data = metrics[algorithm_name]
+            data['successes'] += 1
+            data['route_costs'].append(measurement['cost'])
+            data['expanded_nodes'].append(measurement['expanded'])
+            data['runtime_values'].append(measurement['time'])
+            data['runtime_efficiency_values'].append(
+                max(0.0, min(1.0, best_time / measurement['time']))
             )
 
-            elapsed = (
-                time.perf_counter()
-                - started
+            # Lower travel time is better.
+            optimality = best_cost / measurement['cost'] if measurement['cost'] > 0 else 0.0
+
+            # Fewer expanded nodes is better.
+            search_efficiency = (
+                best_expanded / measurement['expanded']
+                if measurement['expanded'] > 0 else 0.0
             )
 
-            metrics[
-                algorithm_name
-            ]['execution_times'].append(
-                elapsed
+            # Faster measured execution is better.
+            runtime_efficiency = (
+                best_time / measurement['time']
+                if measurement['time'] > 0 else 0.0
             )
 
-            # Treat only valid finite positive-cost routes as
-            # successful benchmark results.
-            if (
-                path is None
-                or not np.isfinite(cost)
-                or cost <= 0
-            ):
-                continue
-
-            expanded = int(expanded)
-
-            pair_results[algorithm_name] = {
-                'cost': float(cost),
-                'expanded': expanded
-            }
-
-            metrics[
-                algorithm_name
-            ]['successes'] += 1
-
-            metrics[
-                algorithm_name
-            ]['route_costs'].append(
-                float(cost)
+            data['optimality_values'].append(
+                max(0.0, min(1.0, optimality))
             )
-
-            metrics[
-                algorithm_name
-            ]['expanded_nodes'].append(
-                expanded
+            data['efficiency_values'].append(
+                max(0.0, min(1.0, search_efficiency))
             )
-
-            # ------------------------------------------------
-            # Optimality: UCS remains the ground truth.
-            # ------------------------------------------------
-
-            optimality = ucs_cost / cost
-
-            optimality = max(
-                0.0,
-                min(
-                    1.0,
-                    optimality
-                )
-            )
-
-            metrics[
-                algorithm_name
-            ]['optimality_values'].append(
-                optimality
-            )
-
-        # ----------------------------------------------------
-        # Search efficiency
-        # ----------------------------------------------------
-        # Compare every successful algorithm against the least
-        # number of nodes expanded on THIS SAME route.
-        #
-        # best_efficiency = min_expanded / algorithm_expanded
-        #
-        # This guarantees that only the most search-efficient
-        # algorithm(s) on a route receive 1.0. UCS no longer gets
-        # an automatic perfect score just for being the optimality
-        # reference.
-        # ----------------------------------------------------
-
-        positive_expanded = [
-            result['expanded']
-            for result in pair_results.values()
-            if result['expanded'] > 0
-        ]
-
-        if positive_expanded:
-
-            best_expanded = min(
-                positive_expanded
-            )
-
-            for algorithm_name, result in pair_results.items():
-
-                expanded = result['expanded']
-
-                efficiency = (
-                    best_expanded / expanded
-                    if expanded > 0
-                    else 0.0
-                )
-
-                efficiency = max(
-                    0.0,
-                    min(
-                        1.0,
-                        efficiency
-                    )
-                )
-
-                metrics[
-                    algorithm_name
-                ]['efficiency_values'].append(
-                    efficiency
-                )
-
-        else:
-
-            # Keep the arrays aligned with successful searches if
-            # a search reports zero expanded nodes.
-            for algorithm_name in pair_results:
-                metrics[
-                    algorithm_name
-                ]['efficiency_values'].append(
-                    0.0
-                )
-
-    # --------------------------------------------------------
-    # Convert benchmark data to final scores
-    # --------------------------------------------------------
 
     results = []
 
     for algorithm_name in ALGORITHMS:
+        data = metrics[algorithm_name]
 
-        data = metrics[
-            algorithm_name
-        ]
-
-        if valid_benchmarks == 0:
-
-            success_rate = 0.0
-            optimality = 0.0
-            efficiency = 0.0
-            final_score = 0.0
-
-        else:
-
-            success_rate = (
-                data['successes']
-                / valid_benchmarks
-            )
-
+        if valid_benchmarks:
+            success_rate = data['successes'] / valid_benchmarks
             optimality = (
-                float(
-                    np.mean(
-                        data[
-                            'optimality_values'
-                        ]
-                    )
-                )
-                if data[
-                    'optimality_values'
-                ]
-                else 0.0
+                float(np.mean(data['optimality_values']))
+                if data['optimality_values'] else 0.0
             )
-
             efficiency = (
-                float(
-                    np.mean(
-                        data[
-                            'efficiency_values'
-                        ]
-                    )
-                )
-                if data[
-                    'efficiency_values'
-                ]
-                else 0.0
+                float(np.mean(data['efficiency_values']))
+                if data['efficiency_values'] else 0.0
             )
-
-            quality_efficiency = (
-                harmonic_mean(
-                    optimality,
-                    efficiency
-                )
+            avg_time = (
+                float(np.median(data['runtime_values']))
+                if data['runtime_values'] else 0.0
             )
-
-            final_score = (
-                success_rate
-                * quality_efficiency
+            runtime_efficiency = (
+                float(np.mean(data['runtime_efficiency_values']))
+                if data['runtime_efficiency_values'] else 0.0
             )
-
-        avg_time = (
-            float(
-                np.mean(
-                    data[
-                        'execution_times'
-                    ]
-                )
+            final_score = _benchmark_score(
+                success_rate, optimality, efficiency, runtime_efficiency
             )
-            if data[
-                'execution_times'
-            ]
-            else 0.0
-        )
+        else:
+            success_rate = optimality = efficiency = final_score = 0.0
+            avg_time = 0.0
 
-        avg_cost = (
-            float(
-                np.mean(
-                    data[
-                        'route_costs'
-                    ]
-                )
-            )
-            if data[
-                'route_costs'
-            ]
-            else float('inf')
-        )
+        results.append({
+            'algorithm': algorithm_name,
+            'success_rate': success_rate,
+            'optimality': optimality,
+            'efficiency': efficiency,
+            'final_score': final_score,
+            'average_path_cost': (
+                float(np.mean(data['route_costs']))
+                if data['route_costs'] else float('inf')
+            ),
+            'average_nodes_expanded': (
+                float(np.mean(data['expanded_nodes']))
+                if data['expanded_nodes'] else float('inf')
+            ),
+            'average_execution_time': avg_time,
+            'successful_searches': data['successes'],
+            'benchmark_routes': valid_benchmarks
+        })
 
-        avg_expanded = (
-            float(
-                np.mean(
-                    data[
-                        'expanded_nodes'
-                    ]
-                )
-            )
-            if data[
-                'expanded_nodes'
-            ]
-            else float('inf')
-        )
-
-        results.append(
-            {
-                'algorithm': algorithm_name,
-
-                'success_rate':
-                    success_rate,
-
-                'optimality':
-                    optimality,
-
-                'efficiency':
-                    efficiency,
-
-                'final_score':
-                    final_score,
-
-                'average_path_cost':
-                    avg_cost,
-
-                'average_nodes_expanded':
-                    avg_expanded,
-
-                'average_execution_time':
-                    avg_time,
-
-                'successful_searches':
-                    data['successes'],
-
-                'benchmark_routes':
-                    valid_benchmarks
-            }
-        )
-
-    results_df = pd.DataFrame(
-        results
-    )
-
-    # --------------------------------------------------------
-    # Deterministic ordering
-    # --------------------------------------------------------
+    results_df = pd.DataFrame(results)
 
     algorithm_order = {
         'A* Search': 0,
@@ -2205,58 +1111,28 @@ def evaluate_algorithms(
         'DFS': 4
     }
 
-    results_df['_order'] = (
-        results_df['algorithm']
-        .map(algorithm_order)
-    )
-
-    results_df = results_df.sort_values(
-        by=[
-            'final_score',
-            'optimality',
-            'efficiency',
-            'success_rate',
-            '_order'
-        ],
-        ascending=[
-            False,
-            False,
-            False,
-            False,
-            True
-        ]
-    )
-
-    results_df = results_df.drop(
-        columns=['_order']
-    )
+    if not results_df.empty:
+        results_df['_order'] = results_df['algorithm'].map(algorithm_order)
+        results_df = results_df.sort_values(
+            by=['final_score', 'optimality', 'efficiency', 'success_rate', '_order'],
+            ascending=[False, False, False, False, True]
+        ).drop(columns=['_order'])
 
     best_two = (
-        results_df
-        .head(2)
-        ['algorithm']
-        .tolist()
+        results_df.head(2)['algorithm'].tolist()
+        if not results_df.empty else []
     )
 
-    print('\n========== ALGORITHM EVALUATION ==========')
-
+    print('\n========== OFFICIAL DATA ALGORITHM EVALUATION ==========')
     for _, row in results_df.iterrows():
-
         print(
             f"{row['algorithm']}: "
             f"Score={row['final_score']:.3f}, "
             f"Optimality={row['optimality']:.3f}, "
-            f"Efficiency={row['efficiency']:.3f}, "
+            f"SearchEfficiency={row['efficiency']:.3f}, "
             f"Success={row['success_rate']:.3f}"
         )
-
-    print(
-        f'\nBEST 2: {best_two}'
-    )
-
-    print(
-        '===========================================\n'
-    )
+    print(f'BEST 2: {best_two}')
 
     return results_df, best_two
 
@@ -2555,12 +1431,14 @@ def calculate_user_route(
                     metadata
                 ),
 
-                'lat': float(
-                    nodes[node][0]
+                'lat': (
+                    float(nodes[node][0])
+                    if nodes[node][0] is not None else None
                 ),
 
-                'lon': float(
-                    nodes[node][1]
+                'lon': (
+                    float(nodes[node][1])
+                    if nodes[node][1] is not None else None
                 ),
 
                 'mode': metadata.get(
@@ -2665,9 +1543,9 @@ def calculate_user_route(
                     ),
 
                 'score_basis':
-                    'Network benchmark using '
-                    'success rate, route optimality '
-                    'and search efficiency.'
+                    'Official timetable benchmark using '
+                    'route optimality, search efficiency '
+                    'and measured runtime.'
             }
         )
 
@@ -2680,80 +1558,36 @@ def calculate_user_route(
         )
 
     # --------------------------------------------------------
-    # Find UCS result as route-level optimal reference
+    # Route-level metrics use the best successful observed result.
+    # No algorithm is assumed to be "correct" merely by its name.
     # --------------------------------------------------------
-
-    ucs_result = next(
-        (
-            r for r in results
-            if r['algorithm']
-            == 'Uniform Cost Search'
-        ),
-        None
+    best_route_cost = min(
+        float(r['path_cost'])
+        for r in results
+        if np.isfinite(r['path_cost']) and r['path_cost'] > 0
+    )
+    best_route_nodes = min(
+        int(r['nodes'])
+        for r in results
+        if int(r['nodes']) > 0
     )
 
-    if ucs_result:
+    for result in results:
+        optimality = (
+            best_route_cost / result['path_cost']
+            if result['path_cost'] > 0 else 0.0
+        )
+        efficiency = (
+            best_route_nodes / result['nodes']
+            if result['nodes'] > 0 else 0.0
+        )
 
-        ucs_cost = ucs_result[
-            'path_cost'
-        ]
-
-        ucs_nodes = ucs_result[
-            'nodes'
-        ]
-
-        for result in results:
-
-            if result['path_cost'] > 0:
-
-                optimality = (
-                    ucs_cost
-                    / result['path_cost']
-                )
-
-            else:
-                optimality = 1.0
-
-            optimality = max(
-                0.0,
-                min(
-                    1.0,
-                    optimality
-                )
-            )
-
-            if result['nodes'] > 0:
-
-                efficiency = (
-                    ucs_nodes
-                    / result['nodes']
-                )
-
-            else:
-
-                efficiency = 0.0
-
-            efficiency = max(
-                0.0,
-                min(
-                    1.0,
-                    efficiency
-                )
-            )
-
-            result[
-                'route_optimality'
-            ] = round(
-                optimality,
-                3
-            )
-
-            result[
-                'route_efficiency'
-            ] = round(
-                efficiency,
-                3
-            )
+        result['route_optimality'] = round(
+            max(0.0, min(1.0, optimality)), 3
+        )
+        result['route_efficiency'] = round(
+            max(0.0, min(1.0, efficiency)), 3
+        )
 
     # --------------------------------------------------------
     # IMPORTANT:
@@ -2869,621 +1703,234 @@ def calculate_user_route(
 # ============================================================
 # 11. NETWORK-WIDE ACCESSIBILITY
 # ============================================================
-
-def calculate_accessibility(
-    df_wards,
-    df_transit,
-    graph,
-    nodes,
-    transport_nodes,
-    best_algorithms
-):
-
-    valid_transit = df_transit.dropna(
-        subset=[
-            'latitude',
-            'longitude'
-        ]
-    )
-
-    transit_coords = (
-        valid_transit[
-            [
-                'latitude',
-                'longitude'
-            ]
-        ].values
-    )
-
-    ward_coords = (
-        df_wards[
-            [
-                'latitude',
-                'longitude'
-            ]
-        ].values
-    )
-
-    if len(transit_coords):
-
-        tree = cKDTree(
-            transit_coords
-        )
-
-        distances, _ = tree.query(
-            ward_coords
-        )
-
-        df_wards[
-            'distance_km'
-        ] = distances * 111.0
-
-    else:
-
-        df_wards[
-            'distance_km'
-        ] = 0.0
-
-    df_wards[
-        'Accessibility_Gap_Score'
-    ] = (
-        df_wards['distance_km']
-        * df_wards['TOT_P_DEN']
-    )
-
-    df_poor = (
-        df_wards[
-            df_wards['distance_km']
-            > 0.30
-        ]
-        .sort_values(
-            'distance_km',
-            ascending=False
-        )
-    )
-
-    poor_access = [
-
-        {
-            'ward':
-                row['Ward_Alphabet'],
-
-            'name':
-                row['Ward_Names'],
-
-            'distance':
-                round(
-                    row['distance_km'],
-                    2
-                )
-        }
-
-        for _, row
-        in df_poor.iterrows()
-    ]
-
-    algorithm_scores = {}
-
-    for algorithm_name in best_algorithms:
-
-        algorithm = (
-            ALGORITHMS[
-                algorithm_name
-            ]
-        )
-
-        ward_results = []
-
-        for _, row in df_wards.iterrows():
-
-            ward_node = (
-                f"W_"
-                f"{row['Ward_Alphabet']}"
-            )
-
-            path, cost, expanded = (
-                algorithm(
-                    graph,
-                    ward_node,
-                    set(transport_nodes),
-                    nodes
-                )
-            )
-
-            if path is not None:
-
-                ward_results.append(
-                    {
-                        'ward':
-                            row[
-                                'Ward_Alphabet'
-                            ],
-
-                        'path_cost':
-                            cost,
-
-                        'nodes_expanded':
-                            expanded
-                    }
-                )
-
-        algorithm_scores[
-            algorithm_name
-        ] = pd.DataFrame(
-            ward_results
-        )
-
-    df_final = df_wards.copy()
-
-    for algorithm_name in best_algorithms:
-
-        result = algorithm_scores[
-            algorithm_name
-        ]
-
-        if result.empty:
-            continue
-
-        df_final = df_final.merge(
-
-            result.rename(
-                columns={
-                    'path_cost':
-                        f'{algorithm_name}_cost',
-
-                    'nodes_expanded':
-                        f'{algorithm_name}_expanded'
-                }
-            ),
-
-            left_on='Ward_Alphabet',
-
-            right_on='ward',
-
-            how='left'
-        )
-
-        if 'ward' in df_final.columns:
-
-            df_final.drop(
-                columns=['ward'],
-                inplace=True
-            )
-
-    cost_columns = [
-
-        f'{algorithm}_cost'
-
-        for algorithm
-        in best_algorithms
-
-        if f'{algorithm}_cost'
-        in df_final.columns
-    ]
-
-    if cost_columns:
-
-        df_final[
-            'Search_Average_Cost'
-        ] = (
-            df_final[
-                cost_columns
-            ]
-            .mean(axis=1)
-            .fillna(0)
-        )
-
-    else:
-
-        df_final[
-            'Search_Average_Cost'
-        ] = 0
-
-    df_final[
-        'Final_Priority_Score'
-    ] = (
-        df_final[
-            'Accessibility_Gap_Score'
-        ]
-        *
-        (
-            1
-            +
-            df_final[
-                'Search_Average_Cost'
-            ]
-        )
-    )
-
-    df_priority = (
-        df_final
-        .sort_values(
-            'Final_Priority_Score',
-            ascending=False
-        )
-        .head(5)
-    )
-
-    prioritized = [
-
-        {
-            'ward':
-                row[
-                    'Ward_Alphabet'
-                ],
-
-            'name':
-                row['Ward_Names'],
-
-            'distance':
-                round(
-                    row['distance_km'],
-                    2
-                ),
-
-            'score':
-                round(
-                    row[
-                        'Final_Priority_Score'
-                    ],
-                    2
-                )
-        }
-
-        for _, row
-        in df_priority.iterrows()
-    ]
-
-    return (
-        poor_access,
-        prioritized
-    )
-
-
+# The official BMC dataset contains ward + population only. The official
+# railway datasets do not contain ward coordinates, so geographic transit
+# desert calculations are intentionally not performed.
+#
+# The official-data population planning calculation is implemented immediately
+# below in process_transit_data() via calculate_accessibility().
+#
 # ============================================================
 # 12. PROCESS DATA
 # ============================================================
 
+WARD_LOCALITY_NAMES = {
+    'A': 'Colaba, Navy Nagar, Cuffe Parade, Churchgate, Fort',
+    'B': 'Masjid Bunder, Mohd. Ali Road, Dongri, Bhendi Bazar',
+    'C': 'Marine Lines, Bhuleshwar, Pydhonie, Chira Bazar',
+    'D': 'Malabar Hill, Girgaon, Grant Road, Walkeshwar, Tardeo',
+    'E': 'Byculla, Mazgaon, Reay Road, Madanpura',
+    'F/S': 'Parel, Sewri, Naigaon, Lalbaug, Kalachowki',
+    'F/N': 'Sion, Matunga, Wadala, Antop Hill',
+    'G/S': 'Worli, Prabhadevi, Lower Parel, Mahalaxmi',
+    'G/N': 'Dadar (West), Mahim, Dharavi',
+    'H/E': 'Bandra East, Santacruz East, Khar East, Kalina, Vakola',
+    'H/W': 'Bandra West, Santacruz West, Khar West',
+    'K/E': 'Andheri East, Jogeshwari East, Vile Parle East',
+    'K/W': 'Andheri West, Vile Parle West, Juhu, Versova, Lokhandwala',
+    'P/S': 'Goregaon East, Goregaon West, Aarey Colony',
+    'P/N': 'Malad East, Malad West, Marve, Aksa, Pathanwadi',
+    'R/S': 'Kandivali East, Kandivali West, Charkop, Poisar',
+    'R/C': 'Borivali East, Borivali West, Gorai, Magathane',
+    'R/N': 'Dahisar East, Dahisar West, IC Colony, Rawalpada',
+    'L': 'Kurla East, Kurla West, Sakinaka, Chandivali',
+    'M/E': 'Govandi, Mankhurd, Deonar, Shivaji Nagar',
+    'M/W': 'Chembur, Tilak Nagar, Shell Colony',
+    'N': 'Ghatkopar East, Ghatkopar West, Pant Nagar, Vikhroli West',
+    'S': 'Bhandup, Kanjurmarg, Vikhroli East, Powai',
+    'T': 'Mulund East, Mulund West, Nahur'
+}
+
+def ward_locality_name(value):
+    raw = str(value).strip()
+    aliases = {
+        'F/NORTH': 'F/N',
+        'F/SOUTH': 'F/S',
+        'G/NORTH': 'G/N',
+        'G/SOUTH': 'G/S',
+        'H/EAST': 'H/E',
+        'H/WEST': 'H/W',
+        'K/EAST': 'K/E',
+        'K/WEST': 'K/W',
+        'M/EAST': 'M/E',
+        'M/WEST': 'M/W',
+        'P/NORTH': 'P/N',
+        'P/SOUTH': 'P/S',
+        'R/CENTRAL': 'R/C',
+        'R/NORTH': 'R/N',
+        'R/SOUTH': 'R/S'
+    }
+    key = aliases.get(raw.upper(), raw.upper())
+    return WARD_LOCALITY_NAMES.get(key, raw)
+
+
+def calculate_accessibility(df_wards, *args, **kwargs):
+    """Official-data-only ward planning view.
+
+    The supplied BMC file contains ward and population only. It does not
+    contain ward coordinates or a transit-distance field, so a geographic
+    transit-desert score is not calculated. Instead, the dashboard exposes
+    a transparent population-based planning metric.
+    """
+    work = df_wards.copy()
+    work['population'] = pd.to_numeric(work['population'], errors='coerce')
+    work = work.dropna(subset=['ward', 'population']).copy()
+
+    max_population = float(work['population'].max()) if not work.empty else 0.0
+    total_population = float(work['population'].sum()) if not work.empty else 0.0
+
+    if max_population > 0:
+        work['population_priority_score'] = (
+            work['population'] / max_population * 100.0
+        )
+    else:
+        work['population_priority_score'] = 0.0
+
+    work['population_share'] = (
+        work['population'] / total_population * 100.0
+        if total_population > 0 else 0.0
+    )
+
+    poor_access = []
+    for _, row in work.sort_values('population', ascending=False).iterrows():
+        poor_access.append({
+            'ward': str(row['ward']),
+            'name': ward_locality_name(row['ward']),
+            'population': int(row['population']),
+            'score': round(float(row['population_priority_score']), 2),
+            'population_share': round(float(row['population_share']), 2),
+            'analysis_status': 'Population-based planning indicator; transit distance is not available in the supplied ward dataset'
+        })
+
+    prioritized = [
+        {
+            'ward': str(row['ward']),
+            'name': ward_locality_name(row['ward']),
+            'population': int(row['population']),
+            'score': round(float(row['population_priority_score']), 2),
+            'population_share': round(float(row['population_share']), 2),
+            'analysis_status': 'Population-based planning priority; not a transit-access score'
+        }
+        for _, row in work.sort_values(
+            ['population_priority_score', 'population'],
+            ascending=False
+        ).head(5).iterrows()
+    ]
+
+    return poor_access, prioritized
+
+
 def process_transit_data():
+    paths = {
+        key: os.path.join(DATA_DIR, filename)
+        for key, filename in OFFICIAL_FILES.items()
+    }
 
-    wards_path = os.path.join(
-        DATA_DIR,
-        'ward_level_collated.csv'
-    )
+    for key, path in paths.items():
+        if not os.path.exists(path):
+            raise FileNotFoundError(
+                f'Missing official dataset: {path}'
+            )
 
-    transit_path = os.path.join(
-        DATA_DIR,
-        'unified_mumbai_transport.csv'
-    )
-
-    gtfs_stops_path = os.path.join(DATA_DIR, 'stops.txt')
-    gtfs_sequences_path = os.path.join(DATA_DIR, 'bus_route_sequences.csv')
-
-    # Fast path: load all processed application state from disk.
-    cached = _load_processed_cache(
-        wards_path,
-        transit_path,
-        gtfs_stops_path,
-        gtfs_sequences_path
-    )
-
+    cached = _load_processed_cache(paths)
     if cached is not None:
         return cached
 
-    # Slow path: process raw datasets once.
-    df_wards = pd.read_csv(
-        wards_path
-    )
+    print('Loading official Mumbai transit datasets...')
 
-    df_transit = pd.read_csv(
-        transit_path
-    )
+    df_wards = pd.read_csv(paths['wards'])
+    stations = pd.read_csv(paths['stations'], encoding='utf-8-sig')
+    services = pd.read_csv(paths['services'], encoding='utf-8-sig')
+    stop_times = pd.read_csv(paths['stop_times'], encoding='utf-8-sig')
+    best_routes = pd.read_csv(paths['best_routes'], encoding='utf-8-sig')
+    best_summary = pd.read_csv(paths['best_summary'], encoding='utf-8-sig')
 
-    df_transit = df_transit.rename(
-        columns={
-            'Latitude':
-                'latitude',
-
-            'Longitude':
-                'longitude'
-        }
-    )
-
-    # IMPORTANT:
-    # Recover Local Train coordinates BEFORE dropping NaN.
-    df_transit = (
-        fill_local_coordinates(
-            df_transit
-        )
-    )
-
-    df_transit = (
-        df_transit
-        .dropna(
-            subset=[
-                'latitude',
-                'longitude'
-            ]
-        )
-        .copy()
-    )
-
-    df_wards = (
-        df_wards
-        .dropna(
-            subset=[
-                'Ward_Alphabet',
-                'TOT_P_DEN'
-            ]
-        )
-        .copy()
-    )
-
-    # --------------------------------------------------------
-    # Mumbai ward coordinates
-    # --------------------------------------------------------
-
-    mumbai_ward_coords = {
-
-        'A':
-            (18.9220, 72.8347),
-
-        'B':
-            (18.9548, 72.8377),
-
-        'C':
-            (18.9449, 72.8259),
-
-        'D':
-            (18.9647, 72.8130),
-
-        'E':
-            (18.9696, 72.8423),
-
-        'F/N':
-            (19.0238, 72.8550),
-
-        'F/S':
-            (19.0014, 72.8452),
-
-        'G/N':
-            (19.0330, 72.8475),
-
-        'G/S':
-            (19.0103, 72.8262),
-
-        'H/E':
-            (19.0700, 72.8468),
-
-        'H/W':
-            (19.0657, 72.8310),
-
-        'K/E':
-            (19.1136, 72.8697),
-
-        'K/W':
-            (19.1197, 72.8464),
-
-        'L':
-            (19.0759, 72.8877),
-
-        'M/E':
-            (19.0473, 72.9158),
-
-        'M/W':
-            (19.0596, 72.8958),
-
-        'N':
-            (19.1417, 72.9331),
-
-        'P/N':
-            (19.1874, 72.8484),
-
-        'P/S':
-            (19.1551, 72.8464),
-
-        'R/C':
-            (19.2215, 72.8556),
-
-        'R/N':
-            (19.2804, 72.8597),
-
-        'R/S':
-            (19.2094, 72.8126),
-
-        'S':
-            (19.1306, 72.9375),
-
-        'T':
-            (19.1735, 72.9495)
+    required_ward = {'ward', 'population'}
+    required_stations = {'line', 'station'}
+    required_services = {'line', 'train_id', 'recorded_stops'}
+    required_stop_times = {
+        'line', 'train_id', 'station',
+        'scheduled_time', 'stop_sequence'
     }
 
-    df_wards['latitude'] = (
-        df_wards[
-            'Ward_Alphabet'
-        ].map(
-            lambda x:
-            mumbai_ward_coords.get(
-                x,
-                (
-                    19.0760,
-                    72.8777
-                )
-            )[0]
-        )
+    for required, frame, label in [
+        (required_ward, df_wards, 'BMC ward population'),
+        (required_stations, stations, 'local train stations'),
+        (required_services, services, 'local train services'),
+        (required_stop_times, stop_times, 'local train stop times')
+    ]:
+        missing = required - set(frame.columns)
+        if missing:
+            raise ValueError(
+                f'{label} is missing required columns: {sorted(missing)}'
+            )
+
+    graph, nodes, metadata, edge_records = _build_official_railway_graph(
+        stations,
+        stop_times
     )
 
-    df_wards['longitude'] = (
-        df_wards[
-            'Ward_Alphabet'
-        ].map(
-            lambda x:
-            mumbai_ward_coords.get(
-                x,
-                (
-                    19.0760,
-                    72.8777
-                )
-            )[1]
-        )
+    station_lookup = build_station_lookup(
+        stations,
+        stop_times,
+        nodes,
+        metadata
     )
 
-    # --------------------------------------------------------
-    # LOAD REAL GTFS BUS DATA
-    # --------------------------------------------------------
-    gtfs_stops, gtfs_sequences = load_gtfs_bus_data()
-
-    # --------------------------------------------------------
-    # BUILD GRAPH
-    # --------------------------------------------------------
-
-    (
+    results_df, best_two = evaluate_algorithms(
         graph,
         nodes,
-        transport_nodes,
-        metadata,
-        node_rows,
-        bus_edge_routes
-    ) = build_graph(
-        df_wards,
-        df_transit,
-        gtfs_stops,
-        gtfs_sequences
+        station_lookup,
+        number_of_pairs=60
     )
 
-    # --------------------------------------------------------
-    # SEARCHABLE LOCATIONS
-    # --------------------------------------------------------
-
-    station_lookup = (
-        build_station_lookup(
-            df_transit,
-            node_rows,
-            nodes,
-            metadata
-        )
+    poor_access, prioritized = calculate_accessibility(
+        df_wards
     )
-
-    # --------------------------------------------------------
-    # ALGORITHM BENCHMARK
-    # --------------------------------------------------------
-    # This is reached only when the processed cache is missing or stale.
-
-    results_df, best_two = (
-        evaluate_algorithms(
-            graph,
-            nodes,
-            station_lookup,
-            number_of_pairs=60
-        )
-    )
-
-    # --------------------------------------------------------
-    # ACCESSIBILITY
-    # --------------------------------------------------------
-
-    poor_access, prioritized = (
-        calculate_accessibility(
-            df_wards,
-            df_transit,
-            graph,
-            nodes,
-            transport_nodes,
-            best_two
-        )
-    )
-
-    # --------------------------------------------------------
-    # FORMAT ALGORITHM RESULTS FOR HTML
-    # --------------------------------------------------------
 
     algorithm_results = []
-
     for _, row in results_df.iterrows():
+        algorithm_results.append({
+            'algorithm': row['algorithm'],
+            'score': round(float(row['final_score']), 3),
+            'success_rate': round(float(row['success_rate']) * 100, 1),
+            'optimality': round(float(row['optimality']) * 100, 1),
+            'efficiency': round(float(row['efficiency']) * 100, 1),
+            'path_cost': (
+                round(float(row['average_path_cost']), 3)
+                if np.isfinite(row['average_path_cost']) else None
+            ),
+            'nodes': (
+                round(float(row['average_nodes_expanded']), 2)
+                if np.isfinite(row['average_nodes_expanded']) else None
+            ),
+            'time': round(float(row['average_execution_time']), 6),
+            'successful_searches': int(row['successful_searches']),
+            'benchmark_routes': int(row['benchmark_routes'])
+        })
 
-        algorithm_results.append(
-            {
+    station_groups = build_station_groups(station_lookup)
 
-                'algorithm':
-                    row['algorithm'],
+    network_summary = []
+    for _, row in best_summary.iterrows():
+        network_summary.append({
+            'metric': str(row.get('metric', '')),
+            'value': row.get('value'),
+            'unit': str(row.get('unit', '')),
+            'source_date': str(row.get('source_date', '')),
+            'agency': str(row.get('agency', 'BEST')),
+            'notes': str(row.get('notes', ''))
+        })
 
-                # Overall actual evaluation score
-                'score':
-                    round(
-                        row['final_score'],
-                        3
-                    ),
-
-                # Human-readable percentages
-                'success_rate':
-                    round(
-                        row[
-                            'success_rate'
-                        ] * 100,
-                        1
-                    ),
-
-                'optimality':
-                    round(
-                        row[
-                            'optimality'
-                        ] * 100,
-                        1
-                    ),
-
-                'efficiency':
-                    round(
-                        row[
-                            'efficiency'
-                        ] * 100,
-                        1
-                    ),
-
-                'path_cost':
-                    round(
-                        row[
-                            'average_path_cost'
-                        ],
-                        3
-                    ),
-
-                'nodes':
-                    round(
-                        row[
-                            'average_nodes_expanded'
-                        ],
-                        2
-                    ),
-
-                'time':
-                    round(
-                        row[
-                            'average_execution_time'
-                        ],
-                        6
-                    ),
-
-                'successful_searches':
-                    int(
-                        row[
-                            'successful_searches'
-                        ]
-                    ),
-
-                'benchmark_routes':
-                    int(
-                        row[
-                            'benchmark_routes'
-                        ]
-                    )
-            }
-        )
-
-    station_groups = (
-        build_station_groups(
-            station_lookup
-        )
-    )
+    verified_best_routes = []
+    for _, row in best_routes.iterrows():
+        verified_best_routes.append({
+            'route_no': str(row.get('route_no', '')),
+            'from': str(row.get('from', '')),
+            'to': str(row.get('to', '')),
+            'note': str(row.get('official_itinerary_or_note', '')),
+            'verification_basis': str(row.get('verification_basis', ''))
+        })
 
     processed_data = (
         poor_access,
@@ -3495,16 +1942,23 @@ def process_transit_data():
         graph,
         nodes,
         metadata,
-        bus_edge_routes
+        {},
+        network_summary,
+        verified_best_routes
     )
 
-    _save_processed_cache(
-        processed_data,
-        wards_path,
-        transit_path,
-        gtfs_stops_path,
-        gtfs_sequences_path
-    )
+    # Cache format now has 12 items.
+    payload = {
+        'metadata': _cache_metadata(paths),
+        'data': processed_data
+    }
+    temp_path = PROCESSED_CACHE_PATH + '.tmp'
+    try:
+        with open(temp_path, 'wb') as f:
+            pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(temp_path, PROCESSED_CACHE_PATH)
+    except Exception as exc:
+        print(f'Could not save processed cache: {exc}')
 
     return processed_data
 
@@ -3527,7 +1981,9 @@ print(
     cached_graph,
     cached_nodes,
     cached_metadata,
-    cached_bus_edge_routes
+    cached_bus_edge_routes,
+    cached_network_summary,
+    cached_verified_best_routes
 ) = process_transit_data()
 
 cached_node_to_station = {
@@ -3591,7 +2047,13 @@ def home():
             station_names,
 
         station_groups=
-            cached_station_groups
+            cached_station_groups,
+
+        network_summary=
+            cached_network_summary,
+
+        verified_best_routes=
+            cached_verified_best_routes
     )
 
 
