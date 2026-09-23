@@ -23,6 +23,7 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 PROCESSED_CACHE_PATH = os.path.join(DATA_DIR, 'processed_official_cache.pkl')
 ROUTE_CACHE_MAX_SIZE = 1024
 _route_cache = OrderedDict()
+BENCHMARK_ROUTE_COUNT = 300
 BENCHMARK_SCORE_DESCRIPTION = (
     'Score = success rate × (55% route optimality + 30% search '
     'efficiency + 15% runtime efficiency)'
@@ -992,6 +993,7 @@ def _route_cost_regression_metrics(actual_costs, predicted_costs):
         return {
             'samples': 0,
             'mae': None,
+            'mse': None,
             'rmse': None,
             'mape': None,
             'r2': None
@@ -1000,7 +1002,8 @@ def _route_cost_regression_metrics(actual_costs, predicted_costs):
     errors = predicted - actual
     absolute_errors = np.abs(errors)
     mae = float(np.mean(absolute_errors))
-    rmse = float(np.sqrt(np.mean(np.square(errors))))
+    mse = float(np.mean(np.square(errors)))
+    rmse = float(np.sqrt(mse))
     mape = float(np.mean(absolute_errors / actual) * 100.0)
     total_variance = float(np.sum(np.square(actual - np.mean(actual))))
     residual_variance = float(np.sum(np.square(errors)))
@@ -1012,13 +1015,19 @@ def _route_cost_regression_metrics(actual_costs, predicted_costs):
     return {
         'samples': int(actual.size),
         'mae': mae,
+        'mse': mse,
         'rmse': rmse,
         'mape': mape,
         'r2': float(r2)
     }
 
 
-def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
+def evaluate_algorithms(
+    graph,
+    nodes,
+    station_lookup,
+    number_of_pairs=BENCHMARK_ROUTE_COUNT
+):
     print(f'Benchmarking algorithms on {number_of_pairs} fixed official routes...')
 
     pairs = create_benchmark_pairs(graph, station_lookup, number_of_pairs)
@@ -1160,6 +1169,7 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
             'successful_searches': data['successes'],
             'benchmark_routes': valid_benchmarks,
             'route_mae': regression['mae'],
+            'route_mse': regression['mse'],
             'route_rmse': regression['rmse'],
             'route_mape': regression['mape'],
             'route_r2': regression['r2'],
@@ -1946,7 +1956,7 @@ def process_transit_data():
         graph,
         nodes,
         station_lookup,
-        number_of_pairs=60
+        number_of_pairs=BENCHMARK_ROUTE_COUNT
     )
 
     poor_access, prioritized = calculate_accessibility(
@@ -1968,6 +1978,10 @@ def process_transit_data():
             'route_mae': (
                 round(float(row['route_mae']), 3)
                 if np.isfinite(row['route_mae']) else None
+            ),
+            'route_mse': (
+                round(float(row['route_mse']), 3)
+                if np.isfinite(row['route_mse']) else None
             ),
             'route_rmse': (
                 round(float(row['route_rmse']), 3)

@@ -1508,11 +1508,15 @@
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-[11px]">
-
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2 text-[11px]">
                         <div>
                             <span class="text-neutral-500 block">MAE (min)</span>
                             <strong>{{ result.route_mae }}</strong>
+                        </div>
+
+                        <div>
+                            <span class="text-neutral-500 block">MSE (min²)</span>
+                            <strong>{{ result.route_mse }}</strong>
                         </div>
 
                         <div>
