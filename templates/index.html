@@ -1326,6 +1326,9 @@
             <span class="block text-xs text-neutral-500 mt-1">
                 {{ benchmark_score_description }}.
             </span>
+            <span class="block text-xs text-neutral-500 mt-1">
+                {{ route_regression_description }}
+            </span>
                 </p>
 
             </div>
@@ -1488,6 +1491,44 @@
                         <strong>
                             {{ result.time }}s
                         </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="mt-3 pt-3 border-t border-neutral-200">
+
+                    <div class="flex justify-between items-center gap-2 text-[11px]">
+                        <span class="text-neutral-500">
+                            Route-Cost Regression
+                        </span>
+                        <span class="text-neutral-500">
+                            {{ result.regression_samples }} measured routes
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-[11px]">
+
+                        <div>
+                            <span class="text-neutral-500 block">MAE (min)</span>
+                            <strong>{{ result.route_mae }}</strong>
+                        </div>
+
+                        <div>
+                            <span class="text-neutral-500 block">RMSE (min)</span>
+                            <strong>{{ result.route_rmse }}</strong>
+                        </div>
+
+                        <div>
+                            <span class="text-neutral-500 block">MAPE</span>
+                            <strong>{{ result.route_mape }}%</strong>
+                        </div>
+
+                        <div>
+                            <span class="text-neutral-500 block">R²</span>
+                            <strong>{{ result.route_r2 }}</strong>
+                        </div>
 
                     </div>
 

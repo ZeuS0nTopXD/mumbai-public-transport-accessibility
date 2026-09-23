@@ -27,6 +27,10 @@ BENCHMARK_SCORE_DESCRIPTION = (
     'Score = success rate × (55% route optimality + 30% search '
     'efficiency + 15% runtime efficiency)'
 )
+ROUTE_REGRESSION_DESCRIPTION = (
+    'Regression-style route-cost metrics compare each algorithm\'s measured '
+    'scheduled route cost with the best measured route cost on the same routes.'
+)
 
 OFFICIAL_FILES = {
     'wards': 'bmc_ward_population.csv',
@@ -972,6 +976,48 @@ def _benchmark_score(success_rate, optimality, search_efficiency, runtime_effici
     )
 
 
+def _route_cost_regression_metrics(actual_costs, predicted_costs):
+    """Measure route-cost error against the best measured route costs."""
+    actual = np.asarray(list(actual_costs), dtype=float)
+    predicted = np.asarray(list(predicted_costs), dtype=float)
+    valid = (
+        np.isfinite(actual)
+        & np.isfinite(predicted)
+        & (actual > 0)
+    )
+    actual = actual[valid]
+    predicted = predicted[valid]
+
+    if actual.size == 0:
+        return {
+            'samples': 0,
+            'mae': None,
+            'rmse': None,
+            'mape': None,
+            'r2': None
+        }
+
+    errors = predicted - actual
+    absolute_errors = np.abs(errors)
+    mae = float(np.mean(absolute_errors))
+    rmse = float(np.sqrt(np.mean(np.square(errors))))
+    mape = float(np.mean(absolute_errors / actual) * 100.0)
+    total_variance = float(np.sum(np.square(actual - np.mean(actual))))
+    residual_variance = float(np.sum(np.square(errors)))
+    if total_variance > 0:
+        r2 = 1.0 - (residual_variance / total_variance)
+    else:
+        r2 = 1.0 if residual_variance == 0 else 0.0
+
+    return {
+        'samples': int(actual.size),
+        'mae': mae,
+        'rmse': rmse,
+        'mape': mape,
+        'r2': float(r2)
+    }
+
+
 def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
     print(f'Benchmarking algorithms on {number_of_pairs} fixed official routes...')
 
@@ -984,7 +1030,9 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
             'runtime_values': [],
             'runtime_efficiency_values': [],
             'route_costs': [],
-            'expanded_nodes': []
+            'expanded_nodes': [],
+            'reference_costs': [],
+            'predicted_costs': []
         }
         for name in ALGORITHMS
     }
@@ -1030,6 +1078,8 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
             data['route_costs'].append(measurement['cost'])
             data['expanded_nodes'].append(measurement['expanded'])
             data['runtime_values'].append(measurement['time'])
+            data['reference_costs'].append(best_cost)
+            data['predicted_costs'].append(measurement['cost'])
             data['runtime_efficiency_values'].append(
                 max(0.0, min(1.0, best_time / measurement['time']))
             )
@@ -1086,6 +1136,11 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
             success_rate = optimality = efficiency = runtime_efficiency = final_score = 0.0
             avg_time = 0.0
 
+        regression = _route_cost_regression_metrics(
+            data['reference_costs'],
+            data['predicted_costs']
+        )
+
         results.append({
             'algorithm': algorithm_name,
             'success_rate': success_rate,
@@ -1103,7 +1158,12 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
             ),
             'average_execution_time': avg_time,
             'successful_searches': data['successes'],
-            'benchmark_routes': valid_benchmarks
+            'benchmark_routes': valid_benchmarks,
+            'route_mae': regression['mae'],
+            'route_rmse': regression['rmse'],
+            'route_mape': regression['mape'],
+            'route_r2': regression['r2'],
+            'regression_samples': regression['samples']
         })
 
     results_df = pd.DataFrame(results)
@@ -1905,6 +1965,23 @@ def process_transit_data():
                 float(row['runtime_efficiency']) * 100,
                 1
             ),
+            'route_mae': (
+                round(float(row['route_mae']), 3)
+                if np.isfinite(row['route_mae']) else None
+            ),
+            'route_rmse': (
+                round(float(row['route_rmse']), 3)
+                if np.isfinite(row['route_rmse']) else None
+            ),
+            'route_mape': (
+                round(float(row['route_mape']), 1)
+                if np.isfinite(row['route_mape']) else None
+            ),
+            'route_r2': (
+                round(float(row['route_r2']), 3)
+                if np.isfinite(row['route_r2']) else None
+            ),
+            'regression_samples': int(row['regression_samples']),
             'path_cost': (
                 round(float(row['average_path_cost']), 3)
                 if np.isfinite(row['average_path_cost']) else None
@@ -2065,7 +2142,10 @@ def home():
             cached_verified_best_routes,
 
         benchmark_score_description=
-            BENCHMARK_SCORE_DESCRIPTION
+            BENCHMARK_SCORE_DESCRIPTION,
+
+        route_regression_description=
+            ROUTE_REGRESSION_DESCRIPTION
     )
 
 
