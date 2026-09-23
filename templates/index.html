@@ -1324,7 +1324,7 @@
                 <p class="text-xs text-neutral-500 mt-1">
                     Benchmark comparison across the official railway timetable graph.
             <span class="block text-xs text-neutral-500 mt-1">
-                Score = 35% route quality + 30% search efficiency + 20% consistency + 15% success.
+                {{ benchmark_score_description }}.
             </span>
                 </p>
 
@@ -1406,6 +1406,47 @@
                     </span>
 
                     {% endif %}
+
+                </div>
+
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4 text-[11px]">
+
+                    <div>
+                        <span class="text-neutral-500 block">
+                            Success Rate
+                        </span>
+                        <strong>
+                            {{ result.success_rate }}%
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span class="text-neutral-500 block">
+                            Route Optimality
+                        </span>
+                        <strong>
+                            {{ result.optimality }}%
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span class="text-neutral-500 block">
+                            Search Efficiency
+                        </span>
+                        <strong>
+                            {{ result.efficiency }}%
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span class="text-neutral-500 block">
+                            Runtime Efficiency
+                        </span>
+                        <strong>
+                            {{ result.runtime_efficiency }}%
+                        </strong>
+                    </div>
 
                 </div>
 

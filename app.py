@@ -23,6 +23,10 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 PROCESSED_CACHE_PATH = os.path.join(DATA_DIR, 'processed_official_cache.pkl')
 ROUTE_CACHE_MAX_SIZE = 1024
 _route_cache = OrderedDict()
+BENCHMARK_SCORE_DESCRIPTION = (
+    'Score = success rate × (55% route optimality + 30% search '
+    'efficiency + 15% runtime efficiency)'
+)
 
 OFFICIAL_FILES = {
     'wards': 'bmc_ward_population.csv',
@@ -866,16 +870,16 @@ For every test route:
    route receive 1.0.
 
 4. Final score
-   We use a harmonic mean between optimality and efficiency.
+   The weighted benchmark score combines route quality, search effort,
+   measured runtime, and success:
 
-   This prevents an algorithm from winning simply because it
-   is extremely fast to search but produces poor routes.
+       Final Score = Success Rate × (
+           0.55 × Route Optimality
+           + 0.30 × Search Efficiency
+           + 0.15 × Runtime Efficiency
+       )
 
-   Final Score =
-       Success Rate × Harmonic Mean(Optimality, Efficiency)
-
-Execution time is DISPLAYED but not used in the final ranking,
-because machine CPU load can make microsecond timings unstable.
+Execution time is included as runtime efficiency in the final score.
 
 The benchmark uses a fixed random seed so the ranking is
 repeatable.
@@ -1079,7 +1083,7 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
                 success_rate, optimality, efficiency, runtime_efficiency
             )
         else:
-            success_rate = optimality = efficiency = final_score = 0.0
+            success_rate = optimality = efficiency = runtime_efficiency = final_score = 0.0
             avg_time = 0.0
 
         results.append({
@@ -1087,6 +1091,7 @@ def evaluate_algorithms(graph, nodes, station_lookup, number_of_pairs=60):
             'success_rate': success_rate,
             'optimality': optimality,
             'efficiency': efficiency,
+            'runtime_efficiency': runtime_efficiency,
             'final_score': final_score,
             'average_path_cost': (
                 float(np.mean(data['route_costs']))
@@ -1896,6 +1901,10 @@ def process_transit_data():
             'success_rate': round(float(row['success_rate']) * 100, 1),
             'optimality': round(float(row['optimality']) * 100, 1),
             'efficiency': round(float(row['efficiency']) * 100, 1),
+            'runtime_efficiency': round(
+                float(row['runtime_efficiency']) * 100,
+                1
+            ),
             'path_cost': (
                 round(float(row['average_path_cost']), 3)
                 if np.isfinite(row['average_path_cost']) else None
@@ -2053,7 +2062,10 @@ def home():
             cached_network_summary,
 
         verified_best_routes=
-            cached_verified_best_routes
+            cached_verified_best_routes,
+
+        benchmark_score_description=
+            BENCHMARK_SCORE_DESCRIPTION
     )
 
 
