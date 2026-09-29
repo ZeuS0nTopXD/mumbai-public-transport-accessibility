@@ -17,16 +17,16 @@ app = Flask(__name__)
 # ============================================================
 # OFFICIAL DATA / CACHE CONFIGURATION
 # ============================================================
-CACHE_VERSION = 24
+CACHE_VERSION = 25
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 PROCESSED_CACHE_PATH = os.path.join(DATA_DIR, 'processed_official_cache.pkl')
 ROUTE_CACHE_MAX_SIZE = 1024
 _route_cache = OrderedDict()
 BENCHMARK_ROUTE_COUNT = 300
-BENCHMARK_SCORE_DESCRIPTION = (
-    'Score = success rate × (55% route optimality + 30% search '
-    'efficiency + 15% runtime efficiency)'
+BENCHMARK_RANKING_DESCRIPTION = (
+    'Ranking = lowest route-cost RMSE; ties are decided by a 50/50 '
+    'efficiency score using measured compute time and average nodes checked.'
 )
 ROUTE_REGRESSION_DESCRIPTION = (
     'Regression-style route-cost metrics compare each algorithm\'s measured '
@@ -915,17 +915,15 @@ For every test route:
    Only the algorithm(s) with the fewest expanded nodes on that
    route receive 1.0.
 
-4. Final score
-   The weighted benchmark score combines route quality, search effort,
-   measured runtime, and success:
+4. Evaluation ranking
+   The benchmark uses a transparent two-stage ranking:
 
-       Final Score = Success Rate × (
-           0.55 × Route Optimality
-           + 0.30 × Search Efficiency
-           + 0.15 × Runtime Efficiency
-       )
+       1. Lowest route-cost RMSE wins.
+       2. If RMSE is tied, a 50/50 score compares measured compute time
+          and average expanded nodes.
 
-Execution time is included as runtime efficiency in the final score.
+Success rate and runtime efficiency remain visible measurements, but they
+do not obscure the route-cost objective or decide the primary ranking.
 
 The benchmark uses a fixed random seed so the ranking is
 repeatable.
@@ -998,23 +996,68 @@ def create_benchmark_pairs(graph, station_lookup, number_of_pairs=60):
     return sorted(candidates)
 
 
-def _benchmark_score(success_rate, optimality, search_efficiency, runtime_efficiency):
-    """Weighted evaluation for timetable routing.
+def _tie_break_efficiency_score(result, fastest_time, fewest_nodes):
+    """Score speed and search effort for algorithms tied on route RMSE."""
+    try:
+        execution_time = float(result.get('average_execution_time'))
+        expanded_nodes = float(result.get('average_nodes_expanded'))
+        fastest_time = float(fastest_time)
+        fewest_nodes = float(fewest_nodes)
+    except (TypeError, ValueError):
+        return 0.0
 
-    Final score =
-      success × (0.55 × route optimality
-                 + 0.30 × search efficiency
-                 + 0.15 × runtime efficiency)
+    if (
+        not np.isfinite(execution_time)
+        or not np.isfinite(expanded_nodes)
+        or execution_time <= 0
+        or expanded_nodes <= 0
+        or not np.isfinite(fastest_time)
+        or not np.isfinite(fewest_nodes)
+        or fastest_time <= 0
+        or fewest_nodes <= 0
+    ):
+        return 0.0
 
-    Route optimality measures how close the algorithm's scheduled travel
-    time is to the best successful result for the same route.
-    Search efficiency measures expanded nodes relative to the best result.
-    Runtime efficiency is based on the fastest measured successful result.
+    score = (
+        0.5 * (fastest_time / execution_time)
+        + 0.5 * (fewest_nodes / expanded_nodes)
+    )
+    return max(0.0, min(1.0, score))
+
+
+def _evaluation_rank_key(result):
+    """Return the benchmark ordering key for one algorithm result.
+
+    Lower route-cost RMSE is the primary objective. A higher tie-break
+    efficiency score wins when route-cost error is the same. Missing values
+    sort last instead of silently appearing optimal.
     """
-    return success_rate * (
-        0.55 * max(0.0, min(1.0, optimality))
-        + 0.30 * max(0.0, min(1.0, search_efficiency))
-        + 0.15 * max(0.0, min(1.0, runtime_efficiency))
+    def finite_or_infinity(value):
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return float('inf')
+        return numeric if np.isfinite(numeric) else float('inf')
+
+    try:
+        success_rate = float(result.get('success_rate', 0.0))
+    except (TypeError, ValueError):
+        success_rate = 0.0
+
+    try:
+        tie_break_score = float(
+            result.get('tie_break_efficiency_score', 0.0)
+        )
+    except (TypeError, ValueError):
+        tie_break_score = 0.0
+    if not np.isfinite(tie_break_score):
+        tie_break_score = 0.0
+
+    return (
+        finite_or_infinity(result.get('route_rmse')),
+        -tie_break_score,
+        -success_rate,
+        str(result.get('algorithm', ''))
     )
 
 
@@ -1179,11 +1222,8 @@ def evaluate_algorithms(
                 float(np.mean(data['runtime_efficiency_values']))
                 if data['runtime_efficiency_values'] else 0.0
             )
-            final_score = _benchmark_score(
-                success_rate, optimality, efficiency, runtime_efficiency
-            )
         else:
-            success_rate = optimality = efficiency = runtime_efficiency = final_score = 0.0
+            success_rate = optimality = efficiency = runtime_efficiency = 0.0
             avg_time = 0.0
 
         regression = _route_cost_regression_metrics(
@@ -1197,7 +1237,6 @@ def evaluate_algorithms(
             'optimality': optimality,
             'efficiency': efficiency,
             'runtime_efficiency': runtime_efficiency,
-            'final_score': final_score,
             'average_path_cost': (
                 float(np.mean(data['route_costs']))
                 if data['route_costs'] else float('inf')
@@ -1217,22 +1256,57 @@ def evaluate_algorithms(
             'regression_samples': regression['samples']
         })
 
+    finite_rmse = [
+        float(result['route_rmse'])
+        for result in results
+        if result['route_rmse'] is not None
+        and np.isfinite(result['route_rmse'])
+    ]
+    lowest_rmse = min(finite_rmse) if finite_rmse else float('inf')
+    tied_results = [
+        result
+        for result in results
+        if result['route_rmse'] is not None
+        and np.isclose(
+            float(result['route_rmse']),
+            lowest_rmse,
+            rtol=0.0,
+            atol=1e-9
+        )
+    ]
+
+    tied_times = [
+        float(result['average_execution_time'])
+        for result in tied_results
+        if np.isfinite(result['average_execution_time'])
+        and result['average_execution_time'] > 0
+    ]
+    tied_nodes = [
+        float(result['average_nodes_expanded'])
+        for result in tied_results
+        if np.isfinite(result['average_nodes_expanded'])
+        and result['average_nodes_expanded'] > 0
+    ]
+    fastest_tied_time = min(tied_times) if tied_times else float('inf')
+    fewest_tied_nodes = min(tied_nodes) if tied_nodes else float('inf')
+
+    for result in results:
+        if result in tied_results:
+            result['tie_break_efficiency_score'] = (
+                _tie_break_efficiency_score(
+                    result,
+                    fastest_time=fastest_tied_time,
+                    fewest_nodes=fewest_tied_nodes
+                )
+            )
+        else:
+            result['tie_break_efficiency_score'] = None
+
+    results.sort(key=_evaluation_rank_key)
+    for rank, result in enumerate(results, start=1):
+        result['evaluation_rank'] = rank
+
     results_df = pd.DataFrame(results)
-
-    algorithm_order = {
-        'A* Search': 0,
-        'Uniform Cost Search': 1,
-        'BFS': 2,
-        'Greedy Best First Search': 3,
-        'DFS': 4
-    }
-
-    if not results_df.empty:
-        results_df['_order'] = results_df['algorithm'].map(algorithm_order)
-        results_df = results_df.sort_values(
-            by=['final_score', 'optimality', 'efficiency', 'success_rate', '_order'],
-            ascending=[False, False, False, False, True]
-        ).drop(columns=['_order'])
 
     best_two = (
         results_df.head(2)['algorithm'].tolist()
@@ -1243,10 +1317,10 @@ def evaluate_algorithms(
     for _, row in results_df.iterrows():
         print(
             f"{row['algorithm']}: "
-            f"Score={row['final_score']:.3f}, "
-            f"Optimality={row['optimality']:.3f}, "
-            f"SearchEfficiency={row['efficiency']:.3f}, "
-            f"Success={row['success_rate']:.3f}"
+            f"Rank={int(row['evaluation_rank'])}, "
+            f"RMSE={row['route_rmse']:.3f}, "
+            f"TieBreak={row['tie_break_efficiency_score'] if pd.notna(row['tie_break_efficiency_score']) else 'n/a'}, "
+            f"Nodes={row['average_nodes_expanded']:.2f}"
         )
     print(f'BEST 2: {best_two}')
 
@@ -1714,23 +1788,18 @@ def calculate_user_route(
     # This makes the result stable.
     # --------------------------------------------------------
 
-    global_algorithm_scores = {
+    global_algorithm_ranks = {
         item['algorithm']:
-        item['score']
+        item['evaluation_rank']
         for item
         in cached_algorithm_results
     }
 
     for result in results:
 
-        result[
-            'network_score'
-        ] = round(
-            global_algorithm_scores.get(
-                result['algorithm'],
-                0.0
-            ),
-            3
+        result['network_rank'] = global_algorithm_ranks.get(
+            result['algorithm'],
+            10**9
         )
 
         result[
@@ -1790,7 +1859,7 @@ def calculate_user_route(
 
     results.sort(
         key=lambda x: (
-            -x['network_score'],
+            x['network_rank'],
             algorithm_order.get(
                 x['algorithm'],
                 99
@@ -2009,7 +2078,11 @@ def process_transit_data():
     for _, row in results_df.iterrows():
         algorithm_results.append({
             'algorithm': row['algorithm'],
-            'score': round(float(row['final_score']), 3),
+            'evaluation_rank': int(row['evaluation_rank']),
+            'tie_break_efficiency_score': (
+                round(float(row['tie_break_efficiency_score']) * 100, 1)
+                if pd.notna(row['tie_break_efficiency_score']) else None
+            ),
             'success_rate': round(float(row['success_rate']) * 100, 1),
             'optimality': round(float(row['optimality']) * 100, 1),
             'efficiency': round(float(row['efficiency']) * 100, 1),
@@ -2197,8 +2270,8 @@ def home():
         verified_best_routes=
             cached_verified_best_routes,
 
-        benchmark_score_description=
-            BENCHMARK_SCORE_DESCRIPTION,
+        benchmark_ranking_description=
+            BENCHMARK_RANKING_DESCRIPTION,
 
         route_regression_description=
             ROUTE_REGRESSION_DESCRIPTION
