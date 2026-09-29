@@ -87,7 +87,7 @@ def load_project_results():
     dataset_rows = []
     for label, (filename, role) in dataset_files.items():
         frame = pd.read_csv(data_dir / filename, encoding="utf-8-sig")
-        dataset_rows.append((label, len(frame), f"{filename} — {role}"))
+        dataset_rows.append((label, len(frame), f"{filename} - {role}"))
 
     stop_times = pd.read_csv(
         data_dir / "mumbai_local_train_stop_times_ALL_OFFICIAL.csv",
@@ -100,6 +100,34 @@ def load_project_results():
     )
 
     return app, dataset_rows, service_sequences
+
+
+def compare_greedy_bfs_routes(app, number_of_pairs):
+    """Verify whether Greedy and BFS return the same node sequence."""
+    pairs = app.create_benchmark_pairs(
+        app.cached_graph,
+        app.cached_station_lookup,
+        number_of_pairs,
+    )
+    matching_routes = 0
+    for start_name, destination_name in pairs:
+        start = app.cached_station_lookup[start_name]['node']
+        destination = app.cached_station_lookup[destination_name]['node']
+        bfs_path, _, _ = app.bfs(
+            app.cached_graph,
+            start,
+            {destination},
+            app.cached_nodes,
+        )
+        greedy_path, _, _ = app.greedy_best_first_search(
+            app.cached_graph,
+            start,
+            {destination},
+            app.cached_nodes,
+        )
+        if bfs_path is not None and bfs_path == greedy_path:
+            matching_routes += 1
+    return len(pairs), matching_routes
 
 
 def _set_cell_shading(cell, fill: str) -> None:
@@ -182,6 +210,28 @@ def create_paper() -> Path:
     benchmark_routes = results[0]["benchmark_routes"] if results else 0
     leader = results[0] if results else {}
     runner_up = results[1] if len(results) > 1 else {}
+    benchmark_pair_count, matching_greedy_bfs_routes = compare_greedy_bfs_routes(
+        app,
+        benchmark_routes,
+    )
+    greedy = next(
+        (result for result in results if result["algorithm"] == "Greedy Best First Search"),
+        {},
+    )
+    bfs = next(
+        (result for result in results if result["algorithm"] == "BFS"),
+        {},
+    )
+    if matching_greedy_bfs_routes == benchmark_pair_count:
+        route_match_summary = (
+            f"returned the same node sequence on all {benchmark_pair_count} "
+            "benchmark routes"
+        )
+    else:
+        route_match_summary = (
+            f"returned the same node sequence on {matching_greedy_bfs_routes} "
+            f"of {benchmark_pair_count} benchmark routes"
+        )
 
     document = Document()
     section = document.sections[0]
@@ -226,7 +276,7 @@ def create_paper() -> Path:
     _add_heading(document, "Abstract", 1)
     _add_body(
         document,
-        f"This PBL project addresses Mumbai public-transport accessibility by using population and public-transport network data to identify areas that could be prioritized for better connectivity. The system combines a ward-level population-priority indicator with official railway timetable-derived graph data and BEST/BMC route references. Five graph-search algorithms—Breadth-First Search, Depth-First Search, Uniform Cost Search, Greedy Best-First Search, and A* Search—are evaluated on 300 deterministic, reachable station pairs. The study reports success rate, route optimality, search efficiency, compute-time efficiency, path cost, expanded nodes, a transparent evaluation rank, and regression-style route-cost errors against the best measured route. {leader.get('algorithm', 'The leading algorithm')} ranked first under the lexicographic rule Winner = arg min (route-cost RMSE, nodes checked, compute time). Because the supplied ward file has population but no ward coordinates or transit-distance field, the area result is a screening indicator for possible transit-priority areas, not proof of a geographic transit desert. The regression metrics are measurement-based diagnostics, not evidence of a trained machine-learning model."
+        f"This PBL project addresses Mumbai public-transport accessibility by using population and public-transport network data to identify areas that could be prioritized for better connectivity. The system combines a ward-level population-priority indicator with official railway timetable-derived graph data and BEST/BMC route references. Five graph-search algorithms - Breadth-First Search, Depth-First Search, Uniform Cost Search, Greedy Best-First Search, and A* Search - are evaluated on 300 deterministic, reachable station pairs. The study reports success rate, route optimality, search efficiency, compute-time efficiency, path cost, expanded nodes, a transparent evaluation rank, and regression-style route-cost errors against the best measured route. {leader.get('algorithm', 'The leading algorithm')} ranked first under the lexicographic rule Winner = arg min (route-cost RMSE, nodes checked, compute time). Because the supplied ward file has population but no ward coordinates or transit-distance field, the area result is a screening indicator for possible transit-priority areas, not proof of a geographic transit desert. The regression metrics are measurement-based diagnostics, not evidence of a trained machine-learning model."
     )
     _add_body(document, "Keywords: Mumbai public transport; priority areas; transit deserts; graph search; route optimization; timetable graph; accessibility planning")
 
@@ -307,13 +357,13 @@ def create_paper() -> Path:
         [
             "Algorithm", "Success Rate", "Route Optimality", "Search Efficiency",
             "Compute-Time Efficiency", "Evaluation Rank", "Avg Cost (min)",
-            "Nodes Checked", "Median Time (s)"
+            "Nodes Checked", "Median Compute Time (s)"
         ],
         result_rows,
     )
     _add_body(
         document,
-        f"{leader.get('algorithm', 'The leading algorithm')} ranked first (evaluation rank {leader.get('evaluation_rank', 'n/a')}) with route-cost RMSE {leader.get('route_rmse', 0.0):.3f} minutes. The next-ranked method was {runner_up.get('algorithm', 'not available')}; tied methods were compared lexicographically by route-cost RMSE, nodes checked, and compute time. Greedy Best-First Search expanded the fewest nodes but produced routes with RMSE {next((r['route_rmse'] for r in results if r['algorithm'] == 'Greedy Best First Search'), 0.0):.3f} minutes. BFS had the same route-cost error profile as Greedy Best-First Search in this benchmark, while DFS produced the largest route-cost error."
+        f"{leader.get('algorithm', 'The leading algorithm')} ranked first (evaluation rank {leader.get('evaluation_rank', 'n/a')}) with route-cost RMSE {leader.get('route_rmse', 0.0):.3f} minutes. The next-ranked method was {runner_up.get('algorithm', 'not available')}; tied methods were compared lexicographically by route-cost RMSE, nodes checked, and compute time. Greedy Best-First Search expanded the fewest nodes but produced routes with RMSE {greedy.get('route_rmse', 0.0):.3f} minutes. BFS had the same route-cost error profile as Greedy Best-First Search in this benchmark, while DFS produced the largest route-cost error. Greedy Best-First Search and BFS {route_match_summary}, so their path-cost and regression metrics are identical in this run. Greedy checked {greedy.get('nodes', 0.0):.2f} nodes on average, compared with {bfs.get('nodes', 0.0):.2f} for BFS."
     )
 
     _add_heading(document, "6. Regression-Style Route-Cost Evaluation", 1)
@@ -349,7 +399,7 @@ def create_paper() -> Path:
     _add_heading(document, "8. Discussion", 1)
     _add_body(
         document,
-        "The results show the central trade-off in route search. Uniform Cost Search and A* Search preserve the best observed scheduled travel cost, while Greedy Best-First Search and BFS reduce route-search effort or compute time at the cost of longer routes. DFS is sensitive to traversal order and can return a substantially more expensive path. The best algorithm therefore depends on the research objective: cost-optimal routing favors UCS or A*, while rapid exploratory search may favor Greedy Best-First Search."
+        f"The results show the central trade-off in route search. Uniform Cost Search and A* Search preserve the best observed scheduled travel cost. Greedy Best-First Search and BFS {route_match_summary}, but Greedy checked {greedy.get('nodes', 0.0):.2f} nodes on average compared with {bfs.get('nodes', 0.0):.2f} for BFS. BFS nevertheless had the lower median compute time in this run ({bfs.get('time', 0.0):.6f} seconds versus {greedy.get('time', 0.0):.6f} seconds), showing that fewer nodes checked does not automatically mean lower wall-clock time. DFS is sensitive to traversal order and can return a substantially more expensive path."
     )
     _add_body(
         document,

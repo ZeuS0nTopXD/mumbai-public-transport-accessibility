@@ -37,6 +37,8 @@ class ResearchPaperContractTests(unittest.TestCase):
             "lowest route-cost RMSE",
             "Winner = arg min (route-cost RMSE, nodes checked, compute time)",
             "fewer nodes checked wins",
+            "same node sequence on all 300 benchmark routes",
+            "Median Compute Time (s)",
         ):
             self.assertIn(required_text, document_xml)
 
