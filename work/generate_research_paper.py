@@ -226,7 +226,7 @@ def create_paper() -> Path:
     _add_heading(document, "Abstract", 1)
     _add_body(
         document,
-        f"This PBL project addresses Mumbai public-transport accessibility by using population and public-transport network data to identify areas that could be prioritized for better connectivity. The system combines a ward-level population-priority indicator with official railway timetable-derived graph data and BEST/BMC route references. Five graph-search algorithms—Breadth-First Search, Depth-First Search, Uniform Cost Search, Greedy Best-First Search, and A* Search—are evaluated on 300 deterministic, reachable station pairs. The study reports success rate, route optimality, search efficiency, runtime efficiency, path cost, expanded nodes, a transparent evaluation rank, and regression-style route-cost errors against the best measured route. {leader.get('algorithm', 'The leading algorithm')} ranked first under the lowest route-cost RMSE rule, with the tie-break formula applied only among methods sharing that RMSE. Because the supplied ward file has population but no ward coordinates or transit-distance field, the area result is a screening indicator for possible transit-priority areas, not proof of a geographic transit desert. The regression metrics are measurement-based diagnostics, not evidence of a trained machine-learning model."
+        f"This PBL project addresses Mumbai public-transport accessibility by using population and public-transport network data to identify areas that could be prioritized for better connectivity. The system combines a ward-level population-priority indicator with official railway timetable-derived graph data and BEST/BMC route references. Five graph-search algorithms—Breadth-First Search, Depth-First Search, Uniform Cost Search, Greedy Best-First Search, and A* Search—are evaluated on 300 deterministic, reachable station pairs. The study reports success rate, route optimality, search efficiency, runtime efficiency, path cost, expanded nodes, a transparent evaluation rank, and regression-style route-cost errors against the best measured route. {leader.get('algorithm', 'The leading algorithm')} ranked first under the lexicographic rule Winner = arg min (route-cost RMSE, nodes checked, runtime). Because the supplied ward file has population but no ward coordinates or transit-distance field, the area result is a screening indicator for possible transit-priority areas, not proof of a geographic transit desert. The regression metrics are measurement-based diagnostics, not evidence of a trained machine-learning model."
     )
     _add_body(document, "Keywords: Mumbai public transport; priority areas; transit deserts; graph search; route optimization; timetable graph; accessibility planning")
 
@@ -275,10 +275,10 @@ def create_paper() -> Path:
     _add_body(document, "Route optimality = best observed route cost / route cost produced by a")
     _add_body(document, "Search efficiency = minimum expanded nodes / expanded nodes used by a")
     _add_body(document, "Runtime efficiency = fastest successful runtime / runtime of a")
-    _add_body(document, "Evaluation ranking: lowest route-cost RMSE wins; ties are decided by a 50/50 efficiency score using measured compute time and average nodes checked.")
+    _add_body(document, "Evaluation ranking: Winner = arg min (route-cost RMSE, nodes checked, runtime). This means the lowest route-cost RMSE wins; fewer nodes checked wins when RMSE is tied, and runtime is considered only when both earlier values are tied.")
     _add_body(
         document,
-        "Success rate is the number of successful searches divided by the number of valid benchmark routes. For tied methods, the efficiency score is 0.5 x (fastest measured time / method time) + 0.5 x (fewest average nodes / method nodes). Runtime efficiency and search efficiency remain visible supporting measurements, while the evaluation rank uses route-cost RMSE as the primary objective."
+        "Success rate is the number of successful searches divided by the number of valid benchmark routes. Search efficiency and runtime efficiency remain visible supporting measurements, while the evaluation rank uses the explicit lexicographic rule rather than an opaque weighted composite score."
     )
     _add_body(
         document,
@@ -306,13 +306,13 @@ def create_paper() -> Path:
         [
             "Algorithm", "Success Rate", "Route Optimality", "Search Efficiency",
             "Runtime Efficiency", "Evaluation Rank", "Avg Cost (min)",
-            "Avg Nodes", "Median Time (s)"
+            "Nodes Checked", "Median Time (s)"
         ],
         result_rows,
     )
     _add_body(
         document,
-        f"{leader.get('algorithm', 'The leading algorithm')} ranked first (evaluation rank {leader.get('evaluation_rank', 'n/a')}) with route-cost RMSE {leader.get('route_rmse', 0.0):.3f} minutes. The next-ranked method was {runner_up.get('algorithm', 'not available')}; tied methods were compared with the 50/50 efficiency score using measured compute time and average nodes checked. Greedy Best-First Search expanded the fewest nodes but produced routes with RMSE {next((r['route_rmse'] for r in results if r['algorithm'] == 'Greedy Best First Search'), 0.0):.3f} minutes. BFS had the same route-cost error profile as Greedy Best-First Search in this benchmark, while DFS produced the largest route-cost error."
+        f"{leader.get('algorithm', 'The leading algorithm')} ranked first (evaluation rank {leader.get('evaluation_rank', 'n/a')}) with route-cost RMSE {leader.get('route_rmse', 0.0):.3f} minutes. The next-ranked method was {runner_up.get('algorithm', 'not available')}; tied methods were compared lexicographically by route-cost RMSE, nodes checked, and runtime. Greedy Best-First Search expanded the fewest nodes but produced routes with RMSE {next((r['route_rmse'] for r in results if r['algorithm'] == 'Greedy Best First Search'), 0.0):.3f} minutes. BFS had the same route-cost error profile as Greedy Best-First Search in this benchmark, while DFS produced the largest route-cost error."
     )
 
     _add_heading(document, "6. Regression-Style Route-Cost Evaluation", 1)
@@ -352,7 +352,7 @@ def create_paper() -> Path:
     )
     _add_body(
         document,
-        "Runtime efficiency should be interpreted cautiously because the measured times are very small and can be affected by machine load. Runtime and search efficiency are therefore reported as supporting measurements, while the transparent evaluation rank uses the tie-break formula only after route-cost RMSE has been minimized."
+        "Runtime efficiency should be interpreted cautiously because the measured times are very small and can be affected by machine load. Runtime and search efficiency are therefore reported as supporting measurements, while the transparent evaluation rank uses runtime only after route-cost RMSE and nodes checked have been minimized."
     )
 
     _add_heading(document, "9. Limitations and Threats to Validity", 1)
@@ -368,7 +368,7 @@ def create_paper() -> Path:
     _add_heading(document, "10. Conclusion and Future Work", 1)
     _add_body(
         document,
-        "This project provides a PBL-oriented screening workflow for Mumbai public-transport priority areas together with a transparent local-train graph-search benchmark. The leading algorithm ranked first under the explicit rule of lowest route-cost RMSE, with the 50/50 compute-time and node-count formula used only for tied methods. The population-priority indicator helps identify where further connectivity analysis should begin, while the explicit metric panel demonstrates the route-search trade-offs in a reproducible research or classroom setting."
+        "This project provides a PBL-oriented screening workflow for Mumbai public-transport priority areas together with a transparent local-train graph-search benchmark. The leading algorithm ranked first under the explicit rule Winner = arg min (route-cost RMSE, nodes checked, runtime). The population-priority indicator helps identify where further connectivity analysis should begin, while the explicit metric panel demonstrates the route-search trade-offs in a reproducible research or classroom setting."
     )
     _add_body(
         document,

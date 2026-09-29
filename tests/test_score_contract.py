@@ -25,29 +25,14 @@ def _load_evaluation_rank_key():
     return namespace["_evaluation_rank_key"]
 
 
-def _load_tie_break_efficiency_score():
-    tree = ast.parse(APP_SOURCE)
-    function = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef)
-        and node.name == "_tie_break_efficiency_score"
-    )
-    namespace = {"np": np}
-    module = ast.Module(body=[function], type_ignores=[])
-    exec(compile(module, "app.py", "exec"), namespace)
-    return namespace["_tie_break_efficiency_score"]
-
-
 evaluation_rank_key = _load_evaluation_rank_key()
-tie_break_efficiency_score = _load_tie_break_efficiency_score()
 
 
 class BenchmarkScoreContractTests(unittest.TestCase):
     def test_dashboard_uses_backend_score_description(self):
         expected_description = (
-            "Ranking: lowest route-cost RMSE wins. If RMSE is tied, use the "
-            "tie-break formula below."
+            "Ranking: lowest route-cost RMSE wins. If RMSE is tied, fewer "
+            "nodes checked wins; runtime breaks any remaining tie."
         )
 
         self.assertIn(
@@ -77,12 +62,12 @@ class BenchmarkScoreContractTests(unittest.TestCase):
             TEMPLATE_SOURCE,
         )
 
-    def test_dashboard_displays_the_full_tie_break_formula(self):
+    def test_dashboard_displays_the_lexicographic_arg_min_rule(self):
         self.assertIn(
-            "Tie-Break Efficiency = 0.5 * (Fastest measured time / Method time) + "
-            "0.5 * (Fewest average nodes / Method nodes)",
+            "Winner = arg min (Route-Cost RMSE, Nodes Checked, Runtime)",
             TEMPLATE_SOURCE,
         )
+        self.assertNotIn("0.5 *", TEMPLATE_SOURCE)
 
     def test_home_context_passes_ranking_description_to_template(self):
         normalized_source = "".join(APP_SOURCE.split())
@@ -110,53 +95,52 @@ class BenchmarkScoreContractTests(unittest.TestCase):
             evaluation_rank_key(faster_suboptimal),
         )
 
-    def test_equal_rmse_uses_efficiency_formula_as_tie_breaker(self):
-        a_star = {
+    def test_equal_rmse_prefers_fewer_nodes_checked(self):
+        more_nodes = {
             "average_execution_time": 0.2,
-            "average_nodes_expanded": 80.0,
-        }
-        ucs = {
-            "average_execution_time": 0.1,
             "average_nodes_expanded": 100.0,
-        }
-
-        ucs_score = tie_break_efficiency_score(
-            ucs,
-            fastest_time=0.1,
-            fewest_nodes=80.0,
-        )
-        a_star_score = tie_break_efficiency_score(
-            a_star,
-            fastest_time=0.1,
-            fewest_nodes=80.0,
-        )
-
-        self.assertAlmostEqual(0.9, ucs_score)
-        self.assertAlmostEqual(0.75, a_star_score)
-        self.assertGreater(ucs_score, a_star_score)
-
-    def test_equal_rmse_uses_higher_tie_break_score(self):
-        a_star = {
             "route_rmse": 0.0,
-            "tie_break_efficiency_score": 0.9,
             "success_rate": 1.0,
             "algorithm": "A* Search",
         }
-        ucs = {
+        fewer_nodes = {
+            "average_execution_time": 0.1,
+            "average_nodes_expanded": 80.0,
             "route_rmse": 0.0,
-            "tie_break_efficiency_score": 0.8,
             "success_rate": 1.0,
             "algorithm": "Uniform Cost Search",
         }
 
         self.assertLess(
-            evaluation_rank_key(a_star),
-            evaluation_rank_key(ucs),
+            evaluation_rank_key(fewer_nodes),
+            evaluation_rank_key(more_nodes),
+        )
+
+    def test_equal_rmse_and_nodes_prefers_faster_runtime(self):
+        slower = {
+            "route_rmse": 0.0,
+            "average_nodes_expanded": 80.0,
+            "average_execution_time": 0.2,
+            "success_rate": 1.0,
+            "algorithm": "A* Search",
+        }
+        faster = {
+            "route_rmse": 0.0,
+            "average_nodes_expanded": 80.0,
+            "average_execution_time": 0.1,
+            "success_rate": 1.0,
+            "algorithm": "Uniform Cost Search",
+        }
+
+        self.assertLess(
+            evaluation_rank_key(faster),
+            evaluation_rank_key(slower),
         )
 
     def test_dashboard_shows_evaluation_rank_not_aggregate_score(self):
         self.assertIn("Evaluation Rank", TEMPLATE_SOURCE)
-        self.assertIn("Tie-Break Efficiency", TEMPLATE_SOURCE)
+        self.assertIn("Ranking Rule", TEMPLATE_SOURCE)
+        self.assertNotIn("Tie-Break Efficiency", TEMPLATE_SOURCE)
         self.assertNotIn("Overall Evaluation Score", TEMPLATE_SOURCE)
 
     def test_runtime_efficiency_is_exposed_to_the_dashboard(self):

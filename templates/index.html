@@ -1328,7 +1328,7 @@
                 {{ benchmark_ranking_description }}
                 </span>
                 <span class="block text-xs text-neutral-700 mt-2 font-mono leading-relaxed">
-                    Tie-Break Efficiency = 0.5 * (Fastest measured time / Method time) + 0.5 * (Fewest average nodes / Method nodes)
+                    Winner = arg min (Route-Cost RMSE, Nodes Checked, Runtime)
                 </span>
                 <span class="block text-xs text-neutral-500 mt-1">
                 {{ route_regression_description }}
@@ -1558,15 +1558,11 @@
 
                     <div>
                         <span class="text-neutral-500 block">
-                            Tie-Break Efficiency
+                            Ranking Rule
                         </span>
 
                         <strong>
-                            {% if result.tie_break_efficiency_score is not none %}
-                                {{ result.tie_break_efficiency_score }}%
-                            {% else %}
-                                Not used
-                            {% endif %}
+                            RMSE → Nodes → Runtime
                         </strong>
                     </div>
 
