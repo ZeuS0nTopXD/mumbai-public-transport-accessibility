@@ -25,8 +25,8 @@ ROUTE_CACHE_MAX_SIZE = 1024
 _route_cache = OrderedDict()
 BENCHMARK_ROUTE_COUNT = 300
 BENCHMARK_RANKING_DESCRIPTION = (
-    'Ranking = lowest route-cost RMSE; ties are decided by a 50/50 '
-    'efficiency score using measured compute time and average nodes checked.'
+    'Ranking: lowest route-cost RMSE wins. If RMSE is tied, use the '
+    'tie-break formula below.'
 )
 ROUTE_REGRESSION_DESCRIPTION = (
     'Regression-style route-cost metrics compare each algorithm\'s measured '

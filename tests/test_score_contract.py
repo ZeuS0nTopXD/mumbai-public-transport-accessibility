@@ -46,9 +46,8 @@ tie_break_efficiency_score = _load_tie_break_efficiency_score()
 class BenchmarkScoreContractTests(unittest.TestCase):
     def test_dashboard_uses_backend_score_description(self):
         expected_description = (
-            "Ranking = lowest route-cost RMSE; ties are decided by a 50/50 "
-            "efficiency score using measured compute time and average nodes "
-            "checked."
+            "Ranking: lowest route-cost RMSE wins. If RMSE is tied, use the "
+            "tie-break formula below."
         )
 
         self.assertIn(
@@ -75,6 +74,13 @@ class BenchmarkScoreContractTests(unittest.TestCase):
         )
         self.assertNotIn(
             "55% route optimality + 30% search efficiency + 15% runtime efficiency",
+            TEMPLATE_SOURCE,
+        )
+
+    def test_dashboard_displays_the_full_tie_break_formula(self):
+        self.assertIn(
+            "Tie-Break Efficiency = 0.5 * (Fastest measured time / Method time) + "
+            "0.5 * (Fewest average nodes / Method nodes)",
             TEMPLATE_SOURCE,
         )
 

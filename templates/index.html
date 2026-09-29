@@ -1323,13 +1323,16 @@
 
                 <p class="text-xs text-neutral-500 mt-1">
                     Benchmark comparison across the official railway timetable graph.
-            <span class="block text-xs text-neutral-500 mt-1">
-                {{ benchmark_ranking_description }}
-            </span>
-            <span class="block text-xs text-neutral-500 mt-1">
-                {{ route_regression_description }}
-            </span>
                 </p>
+                <span class="block text-xs text-neutral-500 mt-1">
+                {{ benchmark_ranking_description }}
+                </span>
+                <span class="block text-xs text-neutral-700 mt-2 font-mono leading-relaxed">
+                    Tie-Break Efficiency = 0.5 * (Fastest measured time / Method time) + 0.5 * (Fewest average nodes / Method nodes)
+                </span>
+                <span class="block text-xs text-neutral-500 mt-1">
+                {{ route_regression_description }}
+                </span>
 
             </div>
 
