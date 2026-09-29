@@ -32,7 +32,7 @@ class BenchmarkScoreContractTests(unittest.TestCase):
     def test_dashboard_uses_backend_score_description(self):
         expected_description = (
             "Ranking: lowest route-cost RMSE wins. If RMSE is tied, fewer "
-            "nodes checked wins; runtime breaks any remaining tie."
+            "nodes checked wins; compute time breaks any remaining tie."
         )
 
         self.assertIn(
@@ -64,10 +64,12 @@ class BenchmarkScoreContractTests(unittest.TestCase):
 
     def test_dashboard_displays_the_lexicographic_arg_min_rule(self):
         self.assertIn(
-            "Winner = arg min (Route-Cost RMSE, Nodes Checked, Runtime)",
+            "Winner = arg min (Route-Cost RMSE, Nodes Checked, Compute Time)",
             TEMPLATE_SOURCE,
         )
         self.assertNotIn("0.5 *", TEMPLATE_SOURCE)
+        self.assertIn("Compute-Time Efficiency", TEMPLATE_SOURCE)
+        self.assertNotIn("Runtime Efficiency", TEMPLATE_SOURCE)
 
     def test_home_context_passes_ranking_description_to_template(self):
         normalized_source = "".join(APP_SOURCE.split())
@@ -152,7 +154,7 @@ class BenchmarkScoreContractTests(unittest.TestCase):
             "Success Rate",
             "Route Optimality",
             "Search Efficiency",
-            "Runtime Efficiency",
+            "Compute-Time Efficiency",
         ):
             self.assertIn(label, TEMPLATE_SOURCE)
 

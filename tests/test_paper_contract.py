@@ -25,7 +25,8 @@ class ResearchPaperContractTests(unittest.TestCase):
             "Success Rate",
             "Route Optimality",
             "Search Efficiency",
-            "Runtime Efficiency",
+            "Compute-Time Efficiency",
+            "Compute Time",
             "MAE",
             "MSE",
             "RMSE",
@@ -34,13 +35,14 @@ class ResearchPaperContractTests(unittest.TestCase):
             "300",
             "Evaluation Rank",
             "lowest route-cost RMSE",
-            "Winner = arg min (route-cost RMSE, nodes checked, runtime)",
+            "Winner = arg min (route-cost RMSE, nodes checked, compute time)",
             "fewer nodes checked wins",
         ):
             self.assertIn(required_text, document_xml)
 
         self.assertNotIn("Final Score", document_xml)
         self.assertNotIn("50/50 efficiency score", document_xml)
+        self.assertNotIn("Runtime Efficiency", document_xml)
 
 
 if __name__ == "__main__":

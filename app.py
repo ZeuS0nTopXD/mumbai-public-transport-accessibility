@@ -26,7 +26,7 @@ _route_cache = OrderedDict()
 BENCHMARK_ROUTE_COUNT = 300
 BENCHMARK_RANKING_DESCRIPTION = (
     'Ranking: lowest route-cost RMSE wins. If RMSE is tied, fewer '
-    'nodes checked wins; runtime breaks any remaining tie.'
+    'nodes checked wins; compute time breaks any remaining tie.'
 )
 ROUTE_REGRESSION_DESCRIPTION = (
     'Regression-style route-cost metrics compare each algorithm\'s measured '
@@ -918,12 +918,12 @@ For every test route:
 4. Evaluation ranking
    The benchmark uses a transparent lexicographic ranking:
 
-       Winner = arg min (route-cost RMSE, nodes checked, runtime)
+       Winner = arg min (route-cost RMSE, nodes checked, compute time)
 
    RMSE is compared first. If RMSE is tied, fewer expanded nodes wins.
-   Runtime is considered only when RMSE and nodes checked are tied.
+   Compute time is considered only when RMSE and nodes checked are tied.
 
-Success rate and runtime efficiency remain visible measurements, but they
+Success rate and compute-time efficiency remain visible measurements, but they
 do not obscure the route-cost objective or decide the primary ranking.
 
 The benchmark uses a fixed random seed so the ranking is
@@ -1001,7 +1001,7 @@ def _evaluation_rank_key(result):
     """Return the benchmark ordering key for one algorithm result.
 
     The tuple is minimized lexicographically: route-cost RMSE first, then
-    nodes checked, then runtime. Missing values sort last instead of silently
+    nodes checked, then compute time. Missing values sort last instead of silently
     appearing optimal.
     """
     def finite_or_infinity(value):
@@ -1238,7 +1238,7 @@ def evaluate_algorithms(
             f"Rank={int(row['evaluation_rank'])}, "
             f"RMSE={row['route_rmse']:.3f}, "
             f"Nodes={row['average_nodes_expanded']:.2f}, "
-            f"Runtime={row['average_execution_time']:.6f}s"
+            f"ComputeTime={row['average_execution_time']:.6f}s"
         )
     print(f'BEST 2: {best_two}')
 
@@ -1653,7 +1653,7 @@ def calculate_user_route(
                 'score_basis':
                     'Official timetable benchmark using '
                     'route optimality, search efficiency '
-                    'and measured runtime.'
+                    'and measured compute time.'
             }
         )
 
