@@ -17,7 +17,7 @@ app = Flask(__name__)
 # ============================================================
 # OFFICIAL DATA / CACHE CONFIGURATION
 # ============================================================
-CACHE_VERSION = 23
+CACHE_VERSION = 24
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 PROCESSED_CACHE_PATH = os.path.join(DATA_DIR, 'processed_official_cache.pkl')
@@ -411,6 +411,47 @@ def _parse_schedule_minutes(value):
         return None
 
 
+def _scheduled_edge_duration(previous_minutes, current_minutes):
+    """Return a valid consecutive-stop duration in minutes.
+
+    A negative difference is only treated as an overnight crossing when the
+    previous stop is late evening and the next stop is early morning. Small
+    negative reversals in extracted timetable rows are invalid data and must
+    not become artificial 1,400-minute edges.
+    """
+    try:
+        previous_minutes = float(previous_minutes)
+        current_minutes = float(current_minutes)
+    except (TypeError, ValueError):
+        return None
+
+    if not math.isfinite(previous_minutes) or not math.isfinite(current_minutes):
+        return None
+
+    duration = current_minutes - previous_minutes
+
+    if duration < 0:
+        late_evening = previous_minutes >= 18.0 * 60.0
+        early_morning = current_minutes <= 6.0 * 60.0
+        if not (late_evening and early_morning):
+            return None
+        duration += 24.0 * 60.0
+
+    if duration <= 0:
+        return None
+
+    return float(duration)
+
+
+def _service_group_columns(stop_times_df):
+    """Return columns that uniquely identify one timetable service sequence."""
+    columns = ['line', 'train_id']
+    for provenance_column in ('source_file', 'source_page'):
+        if provenance_column in stop_times_df.columns:
+            columns.append(provenance_column)
+    return columns
+
+
 def _station_display_map(stations_df, stop_times_df):
     """Use official station names; no coordinates are inferred."""
     result = {}
@@ -490,10 +531,11 @@ def _build_official_railway_graph(stations_df, stop_times_df):
         subset=['station', 'train_id', 'stop_sequence', '_minutes']
     )
 
-    # Train IDs are interpreted together with line, matching the official
-    # service records and preventing unrelated line records from mixing.
-    for (line_name, train_id), group in work.groupby(
-        ['line', 'train_id'], sort=False
+    # Train IDs are reused across timetable pages in the official files.
+    # Keep source file/page in the grouping key so separate service
+    # sequences are not stitched into one artificial journey.
+    for _, group in work.groupby(
+        _service_group_columns(work), sort=False
     ):
         group = group.sort_values('stop_sequence')
         previous = None
@@ -510,15 +552,14 @@ def _build_official_railway_graph(stations_df, stop_times_df):
                 continue
 
             if previous is not None and previous != node and previous_time is not None:
-                duration = current_time - previous_time
-
-                # Overnight services can legitimately cross midnight.
-                if duration < 0:
-                    duration += 24.0 * 60.0
+                duration = _scheduled_edge_duration(
+                    previous_time,
+                    current_time
+                )
 
                 # Never invent a duration. If the official timetable cannot
                 # provide a positive interval, that connection is skipped.
-                if duration > 0:
+                if duration is not None:
                     pair = (previous, node)
                     existing = edge_costs.get(pair)
                     if existing is None or duration < existing:
@@ -1925,7 +1966,8 @@ def process_transit_data():
     required_services = {'line', 'train_id', 'recorded_stops'}
     required_stop_times = {
         'line', 'train_id', 'station',
-        'scheduled_time', 'stop_sequence'
+        'scheduled_time', 'stop_sequence',
+        'source_file', 'source_page'
     }
 
     for required, frame, label in [
